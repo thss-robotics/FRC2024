@@ -1,5 +1,3 @@
-// Author: UMN Robotics Ri3d
-// Last Updated : January 2023
 
 package frc.robot.subsystems;
 
@@ -56,11 +54,11 @@ public class VisionSubsystem extends SubsystemBase {
         }
         double april_tag_pitch = target.getPitch();
         double april_tag_area = target.getArea();
-
+        double april_tag_height = target.getYaw();
         double distance = april_tag_area;
 
         // Print the area and pitch of the target
-        //System.out.println("Area: " + april_tag_height + "Pitch: " + april_tag_pitch);
+        System.out.println("Area: " + april_tag_height + "Pitch: " + april_tag_pitch);
         SmartDashboard.putNumber("t_area", april_tag_area);
         SmartDashboard.putNumber("t_pitch", april_tag_pitch);
         return distance;
@@ -77,8 +75,8 @@ public class VisionSubsystem extends SubsystemBase {
         double angleToTarget = bestTarget.getYaw(); // Assuming yaw gives the angle
         double skewTarget = bestTarget.getSkew();
 
-        //boolean inRange = Math.abs(distanceToTarget) <= distanceThreshold && Math.abs(angleToTarget) <= angleThreshold;
-        boolean inRange = Math.abs(Math.abs(distanceToTarget) - distanceThreshold) >= distanceThresholdRange && Math.abs(Math.abs(angleToTarget) - angleThreshold) >= angleThresholdRange;
+        boolean inRange = Math.abs(distanceToTarget) <= distanceThreshold && Math.abs(angleToTarget) <= angleThreshold;
+
         SmartDashboard.putNumber("t_distance", distanceToTarget);
         
         SmartDashboard.putNumber("t_angle", angleToTarget);
