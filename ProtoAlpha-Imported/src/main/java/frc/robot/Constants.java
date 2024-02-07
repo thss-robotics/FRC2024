@@ -37,11 +37,19 @@ public final class Constants {
     // Talon SRX CAN IDs //
     // public static final int CLIMBER_MOTOR_ID = 6;
 
+    
+     // DIO (Digital Input/Output) Channels //
+     
+     public static final int RIGHT_ENCODER_CHANNEL_A = 0;
+     public static final int RIGHT_ENCODER_CHANNEL_B = 1;
+     public static final int LEFT_ENCODER_CHANNEL_A = 2;
+     public static final int LEFT_ENCODER_CHANNEL_B = 3;
+     
     // Victor PWM Ports //
-    public static final int LEFT_FRONT_DRIVE_MOTOR_ID = 0;
-    public static final int RIGHT_FRONT_DRIVE_MOTOR_ID = 7;
-    public static final int LEFT_REAR_DRIVE_MOTOR_ID = 8;
-    public static final int RIGHT_REAR_DRIVE_MOTOR_ID = 2;
+    public static final int LEFT_FRONT_DRIVE_MOTOR_ID = 2;
+    public static final int RIGHT_FRONT_DRIVE_MOTOR_ID = 1;
+    public static final int LEFT_REAR_DRIVE_MOTOR_ID = 4;
+    public static final int RIGHT_REAR_DRIVE_MOTOR_ID = 3;
 
     public static final int CLIMBER_MOTOR_ID_DRIVETRAIN = 3;
 
@@ -54,11 +62,7 @@ public final class Constants {
     // Other PWM Ports //
     public static final int LED_PWM_ID = 4;
     
-    // DIO (Digital Input/Output) Channels //
-    public static final int RIGHT_ENCODER_CHANNEL_A = 0;
-    public static final int RIGHT_ENCODER_CHANNEL_B = 1;
-    public static final int LEFT_ENCODER_CHANNEL_A = 2;
-    public static final int LEFT_ENCODER_CHANNEL_B = 3;
+ 
 
     // Drivetrain Constants //
     public static final boolean DRIVE_INVERT_LEFT = false; // Whether to reverse the left drivetrain motors or not
@@ -68,7 +72,7 @@ public final class Constants {
     public static final double TRACKED_TAG_DISTANCE_DRIVE_KP = 0.3; // P (Proportional) constant of a PID loop
     public static final double TRACKED_TAG_AREA_DRIVE_KP = 0.2; // P (Proportional) constant of a PID loop
     public static final double APRILTAG_POWER_CAP = 0.75;
-    public static final double DRIVE_TURNING_THRESHOLD_DEGREES = 3;
+    public static final double DRIVE_TURNING_THRESHOLD_DEGREES = 3; 
     public static final int LEFT_ENCODER_COUNTS_PER_REV = 1440; // The number of encoder counts equal to one full revolution of the encoder
     public static final int RIGHT_ENCODER_COUNTS_PER_REV = 1440; // The number of encoder counts equal to one full revolution of the encoder 
 
