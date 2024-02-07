@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.kauailabs.navx.frc.AHRS;
 
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.cameraserver.CameraServer;
@@ -57,14 +58,18 @@ public class Robot extends TimedRobot {
 
     m_leftMotor2.follow(m_leftMotor);
     m_rightMotor2.follow(m_rightMotor);
-    
+  
+
+
+    m_leftMotor.setIdleMode(IdleMode.kBrake);
+    m_rightMotor.setIdleMode(IdleMode.kBrake);
 
     m_myRobot = new DifferentialDrive(m_leftMotor, m_rightMotor);
 
     controller = new Joystick(0);
 
     CameraServer.startAutomaticCapture();
-
+    
     try {
       navX = new AHRS(SPI.Port.kMXP);
       navX.enableLogging(true);
