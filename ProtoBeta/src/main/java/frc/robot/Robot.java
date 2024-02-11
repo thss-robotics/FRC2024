@@ -13,16 +13,21 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.kauailabs.navx.frc.AHRS;
-
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMaxLowLevel;
-
 import edu.wpi.first.cameraserver.CameraServer;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import edu.wpi.first.wpilibj.GenericHID;
+
 
 public class Robot extends TimedRobot {
   private DifferentialDrive m_myRobot;
@@ -33,11 +38,15 @@ public class Robot extends TimedRobot {
   private static final int leftDeviceID2 = 3; 
   private static final int rightDeviceID = 2;
   private static final int rightDeviceID2 = 4;
+  private static final int rightLeaderID = 5;
+  private static final int leftLeaderID = 6;
 
   private CANSparkMax m_leftMotor;
   private CANSparkMax m_rightMotor;
   private CANSparkMax m_leftMotor2;
   private CANSparkMax m_rightMotor2;
+  private TalonSRX m_rightLeader;
+  private TalonSRX m_leftLeader;
 
   private Boolean enableFilter = false;
   SlewRateLimiter filterLeft = new SlewRateLimiter(6);
@@ -56,6 +65,8 @@ public class Robot extends TimedRobot {
     m_rightMotor = new CANSparkMax(rightDeviceID, MotorType.kBrushed);
     m_leftMotor2 = new CANSparkMax(leftDeviceID2, MotorType.kBrushed);
     m_rightMotor2 = new CANSparkMax(rightDeviceID2, MotorType.kBrushed);
+    m_leftLeader = new TalonSRX(rightLeaderID);
+    m_rightLeader = new TalonSRX(leftLeaderID);
 
     m_leftMotor2.follow(m_leftMotor);
     m_rightMotor2.follow(m_rightMotor);
@@ -75,79 +86,17 @@ public class Robot extends TimedRobot {
     }
   }
 
-  @Override 
-  public void robotPeriodic() {
-
-    // Speed
-    speedLimit = -controllerLeft.getRawAxis(3);
-
-    // Slew Rate Fileter
-    filterLeft = new SlewRateLimiter(-controllerRight.getRawAxis(3) * 2 + 6);
-    filterRight = new SlewRateLimiter(-controllerRight.getRawAxis(3) * 2 + 6);
-    filterTurn = new SlewRateLimiter(-controllerRight.getRawAxis(3) * 2 + 6);
-
-    if (controllerLeft.getRawButtonPressed(2)) {
-      enableFilter = !enableFilter;
+      @Override
+    public void testInit() {
+      m_leftLeader.set(TalonSRXControlMode.Speed);
+      m_rightLeader.set(TalonSRXControlMode.Speed);
     }
-
-    if (controllerLeft.getRawButtonPressed(11)) {
-      driveMode++;
-      if (driveMode > 3){
-        driveMode = 1;
-      }
+    @Override
+    public void testPeriodic() {
+      speedLimit = 0.01;
+      m_leftLeader.set(controllerLeft.getRawAxis(5));
+      m_rightLeader.getY();
     }
-
-    if (controllerLeft.getRawButtonPressed(1)) {
-      speedLimit = 0.50;
-    }
-    if (controllerLeft.getRawButtonPressed(2)) {
-      speedLimit = 0.75;
-    }
-    if (controllerLeft.getRawButtonPressed(3)) {
-      speedLimit = 1;
-    }
-
-    telemetry();
-  }
-
-  @Override
-  public void testInit(){
-    
-  }
-
-  @Override
-  public void testPeriodic(){
-    
-  }
-
-  @Override
-  public void teleopPeriodic() {
-    double leftDrive = controllerLeft.getY();
-    double rightDrive = controllerRight.getY();
-    double turn = (controllerLeft.getRawAxis(2) / 2) + (controllerRight.getRawAxis(2) / 2);
-
-    leftDrive *= speedLimit;
-    rightDrive *= speedLimit;
-    turn *= speedLimit;
-
-    if(enableFilter){
-      leftDrive = filterLeft.calculate(leftDrive);
-      rightDrive = filterRight.calculate(rightDrive);
-      turn = filterTurn.calculate(turn);
-    }
-
-    if(driveMode == 1){
-      m_myRobot.tankDrive(leftDrive, -rightDrive);
-    }
-    else if (driveMode == 2) {
-      m_myRobot.arcadeDrive(-turn, -leftDrive);
-    }
-    else {
-      turn = (controllerLeft.getRawAxis(2) / 2) + (controllerRight.getRawAxis(2) / 2);
-      m_myRobot.tankDrive(leftDrive + turn, -rightDrive - turn);
-  
-    }
-  }
 
   private void telemetry(){
     SmartDashboard.putNumber("Motor 1 Applied Output", m_leftMotor.getAppliedOutput());
@@ -243,5 +192,6 @@ public class Robot extends TimedRobot {
     SmartDashboard.putNumber("IMU_Byte_Count", navX.getByteCount());
     SmartDashboard.putNumber("IMU_Update_Count", navX.getUpdateCount());
     SmartDashboard.putNumber("IMU Rate", navX.getRate());
+
   }
 }
