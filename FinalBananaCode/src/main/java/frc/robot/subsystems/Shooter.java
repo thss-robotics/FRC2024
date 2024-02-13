@@ -8,61 +8,70 @@ import frc.lib.Subsystem;
 
 public class Shooter extends Subsystem{
     // Motors
-    private static Spark LowerShooterMotor;
-    private static Spark UpperShooterMotor;
+    private Spark LowerShooterMotor;
+    private Spark UpperShooterMotor;
 
     // Filters
-    private static SlewRateLimiter filter = new SlewRateLimiter(2);
+    private SlewRateLimiter filter = new SlewRateLimiter(2);
   
     // States
-    public static Boolean shooting = true;
-    private static double shootSpeed = 0.2;
+    public Boolean shooterRunning = true;
+    private double shootSpeed = 0.6;
 
 
-
-    public static void shooterInit() {
+    public void shooterInit() {
         // Attach motors
         LowerShooterMotor = new Spark(0);
         UpperShooterMotor = new Spark(1);
       
         // Configure motors
         LowerShooterMotor.addFollower(UpperShooterMotor);
-        UpperShooterMotor.setInverted(true);
+        UpperShooterMotor.setInverted(false);
     }
 
-    public static void driveShooterMotors(double speed) {
+    public void runShooterMotors(double speed) {
+        // Update state
+        if(speed == 0){
+            shooterRunning = false;
+        } else {
+            shooterRunning = true;
+        }
+
+        // Set speed
         speed = filter.calculate(speed);
         LowerShooterMotor.set(speed);
-    }
 
+    }
 
     // STATE CONTROLS --------------------------------------------------->
 
-    public static void shoot() {
-        shooting = true;
-        LowerShooterMotor.set(shootSpeed);
+    public void shoot() {
+        shooterRunning = true;
+        runShooterMotors(shootSpeed);
     }
-      
+
     // BASE CONTROLS --------------------------------------------------->
 
     @Override
     public void stop() {
-        shooting = false;
-        LowerShooterMotor.stopMotor();;
-        UpperShooterMotor.stopMotor();
+        shooterRunning = false;
+        runShooterMotors(0);
     }
 
     @Override
     public boolean checkSystem() {
         return (
-           true 
+           LowerShooterMotor.isAlive() ||
+           UpperShooterMotor.isAlive()
         );
     }
+
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
-        SmartDashboard.putBoolean("Is Shooting", shooting);
+        SmartDashboard.putBoolean("Is Shooting", shooterRunning);
         SmartDashboard.putNumber("Lower Shooter", LowerShooterMotor.get() * 100);
         SmartDashboard.putNumber("Upper Shooter", UpperShooterMotor.get() * 100);
+        SmartDashboard.putNumber("Shooter Speed", shootSpeed * 100);
     }
     
 }

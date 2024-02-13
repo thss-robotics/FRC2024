@@ -1,21 +1,30 @@
 package frc.robot; 
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 
 public class Robot extends TimedRobot {
-    WPI_TalonSRX leftLeader = new WPI_TalonSRX(5);
-    WPI_TalonSRX rightFollower = new WPI_TalonSRX(6);
+    // Subsystems
+    Shooter shooter = new Shooter();
+    Drive drive = new Drive();
+    Intake intake = new Intake();
+    Arm arm = new Arm();
 
+    // Controllers
     XboxController controller;
+    Joystick joystickLeft;
+    Joystick joystickRight;
 
+    // States
     Boolean brakeMode = true;
+    Boolean controlSchemaArm = false;
 
     @Override
     public void robotInit() {
@@ -23,28 +32,23 @@ public class Robot extends TimedRobot {
         controller = new XboxController(0);
 
         // Initialize subsystems
-        Arm.armInit();
-        Drive.driveInit();
-        Intake.intakeInit();
-        Shooter.shooterInit();
+        arm.armInit();
+        drive.driveInit();
+        intake.intakeInit();
+        shooter.shooterInit();
 
-        // Start camera server
-        CameraServer.startAutomaticCapture();
+        //Start camera server
+        if(Constants.kEnableCameraServer){
+          CameraServer.startAutomaticCapture();
+        }
     }
 
     @Override
     public void robotPeriodic(){
-      // Set arm brakes
-      if(controller.getAButton()){
-        Arm.toggleArmBrake();
+      // Toggle Control Schema
+      if(controller.getRawButton(9)){
+        controlSchemaArm = !controlSchemaArm;
       }
-
-      // Set drive brakes
-      if(controller.getBButton()){
-        Drive.toggleDriveBrake();
-      }
-
-   
 
       // Set drive speed limit
       double speedLimit;
@@ -57,66 +61,94 @@ public class Robot extends TimedRobot {
       } else {
           speedLimit = 0; // Default or safety speed
       }
-      Drive.setSpeedLimit(speedLimit);
+
+      drive.setSpeedLimit(speedLimit);
     }
 
 
     @Override
-    public void teleopPeriodic() {
-      // Drive
-      double leftDrive = controller.getLeftY();
-      double rightDrive = controller.getRightY();
-      double turn = controller.getLeftX();
+    public void teleopPeriodic(){
+      // Drive Inputs
+      double leftDrive = -controller.getRawAxis(0);
+      double turn = controller.getRawAxis(1);
+
+      // Arm Inputs
+      double armVelocity = controller.getRawAxis(3);
+      Boolean runIntake = controller.getRawButton(1);
+      Boolean runShooter = controller.getRawButton(2);
         
-      Drive.drive(leftDrive, rightDrive, turn);
+      // Run subsystems
+      drive.drive(leftDrive, 0, turn);
+      arm.moveArm(armVelocity);
 
-      // Move arm
-      double armVelocity = controller.getLeftTriggerAxis() - controller.getRightTriggerAxis();
-      Arm.moveArm(armVelocity);
+      // Run Intake
+      if(runIntake && !intake.intakeRunning){
+        intake.intakeOn();
+      } else{
+        intake.intakeOff();
+      } 
 
-      // Toggle Intake
-      if(controller.getXButton()){
-        if(Intake.intakeRunning)
-        {
-          Intake.intakeOff();
-        } else{
-          Intake.intakeOn();
-        }  
-      }
+      // Run Shooter
+      if(runShooter || !shooter.shooterRunning){
+        shooter.shoot();
+      } else {
+        shooter.stop();
+      }  
 
-      // Toggle Shooter
-      if(controller.getYButton()){
-        if(Shooter.shooting)
-        {
-          Shooter.shoot();
-        } else{
-          Shooter.driveShooterMotors(0);
-        }  
-      }
-
-      // Set drive brakes
-      if(controller.getXButton()){
-        Intake.intakeOn();
-      }
+      // Diagnostics
+      outputTelemetries();
     }
 
     @Override 
-    public void testInit(){
-     
-    }
+    public void testInit(){}
 
     @Override
     public void testPeriodic(){
-      // Move arm
-      double armVelocity = controller.getLeftTriggerAxis() - controller.getRightTriggerAxis();
-      Arm.moveArm(armVelocity);
+      shooter.runShooterMotors(controller.getRawAxis(1));
+      intake.runIntakeMotor(controller.getRawAxis(3));
 
-      
+      // Diagnostics
+      outputTelemetries();
     }
 
     @Override
     public void disabledInit() {
-      Arm.disableArmBrake();
-      Drive.disableDriveBrake();
+      arm.enableArmBrake();
+      drive.disableDriveBrake();
+      intake.stop();
+      shooter.stop();
+    }
+
+    @Override
+    public void disabledPeriodic() {
+      if(controller.getRawButton(1)){
+        arm.toggleBrake();
+      } else if(controller.getRawButton(2)){
+        drive.toggleBrakes();
+      } else if(controller.getRawButton(5)){
+        drive.toggleBrakes();
+      } else if(controller.getRawButton(6)){
+        arm.toggleBrake();
+      }
+    }
+
+    public void outputStates(){
+      SmartDashboard.putBoolean("Control Schema Alternate", controlSchemaArm);
+    }
+
+    public void outputTelemetries(){
+      drive.outputTelemetry(isDisabled());
+      arm.outputTelemetry(isDisabled());
+      shooter.outputTelemetry(isDisabled());
+      intake.outputTelemetry(isDisabled());
+    }
+
+    public void checkSystems(){
+      SmartDashboard.putBoolean("Systems Are Healthy", (
+        drive.checkSystem() ||
+        arm.checkSystem() ||
+        shooter.checkSystem() ||
+        intake.checkSystem() 
+      ));
     }
 }

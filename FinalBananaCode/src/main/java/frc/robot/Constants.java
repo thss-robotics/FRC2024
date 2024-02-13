@@ -5,4 +5,6 @@ public class Constants {
     public static int kFrontRightDriveId = 2;
     public static int kBackLeftDriveId = 3;
     public static int kBackRightDriveId = 4;
+
+    public static Boolean kEnableCameraServer = false;
 }

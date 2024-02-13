@@ -3,42 +3,42 @@ package frc.robot.subsystems;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
-import edu.wpi.first.math.filter.SlewRateLimiter;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.Subsystem;
-import frc.robot.Constants;
 
 public class Intake extends Subsystem {
     // Motors
-    private static CANSparkMax intakeMotor;
+    private CANSparkMax intakeMotor;
 
     // States
-    public static Boolean intakeRunning = true;
-    private static double intakeSpeed = 0.05;
+    public Boolean intakeRunning = true;
+    private static double intakeSpeed = 1;
 
 
 
-    public static void intakeInit() {
+    public void intakeInit() {
         // Attach motors
-        intakeMotor = new CANSparkMax(7, MotorType.kBrushed);
+        intakeMotor = new CANSparkMax(7, MotorType.kBrushless);
     }
 
-    public static void driveIntakeMotor(double speed) {
+    public void runIntakeMotor(double speed) {
+        if(speed == 0 ){
+            intakeRunning = false;
+        } else {
+            intakeRunning = true;
+        }
         intakeMotor.set(speed);
     }
 
 
     // STATE CONTROLS --------------------------------------------------->
 
-    public static void intakeOn() {
-        intakeRunning = true;
-        intakeMotor.set(intakeSpeed);
+    public void intakeOn() {
+        runIntakeMotor(intakeSpeed);
     }
 
-     public static void intakeOff() {
-        intakeRunning = false;
-        intakeMotor.set(0);
+     public void intakeOff() {
+         runIntakeMotor(0);
     }
       
     // BASE CONTROLS --------------------------------------------------->

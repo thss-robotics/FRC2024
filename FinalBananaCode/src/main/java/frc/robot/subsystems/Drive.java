@@ -19,31 +19,31 @@ import frc.robot.Constants;
 
 public class Drive extends Subsystem {
     // Drive System
-    private static DifferentialDrive driveSystem;
+    private DifferentialDrive driveSystem;
 
     // IMU
-    static AHRS navX;
+    private final AHRS navX = new AHRS(SPI.Port.kMXP);
 
     // Motors
-    private static CANSparkMax frontLeftMotor;
-    private static CANSparkMax frontRightMotor;
-    private static CANSparkMax backLeftMotor;
-    private static CANSparkMax backRightMotor;
+    private CANSparkMax frontLeftMotor;
+    private CANSparkMax frontRightMotor;
+    private CANSparkMax backLeftMotor;
+    private CANSparkMax backRightMotor;
 
     // Filters
-    private static Boolean enableFilter = false;
-    private static SlewRateLimiter filterLeft = new SlewRateLimiter(6);
-    private static SlewRateLimiter filterRight = new SlewRateLimiter(6);
-    private static SlewRateLimiter filterTurn = new SlewRateLimiter(6);
+    private Boolean enableFilter = false;
+    private SlewRateLimiter filterLeft = new SlewRateLimiter(6);
+    private SlewRateLimiter filterRight = new SlewRateLimiter(6);
+    private SlewRateLimiter filterTurn = new SlewRateLimiter(6);
 
     // States
-    private static double speedLimit = 1;
-    private static Boolean brakeMode = true;
+    private double speedLimit = 1;
+    private Boolean brakeMode = true;
 
 
-    public static void driveInit() {
+    public void driveInit() {
         // Attach motors
-        frontLeftMotor = new CANSparkMax(Constants.kBackLeftDriveId, MotorType.kBrushed);
+        frontLeftMotor = new CANSparkMax(Constants.kFrontLeftDriveId, MotorType.kBrushed);
         frontRightMotor = new CANSparkMax(Constants.kFrontRightDriveId, MotorType.kBrushed);
         backLeftMotor = new CANSparkMax(Constants.kBackLeftDriveId, MotorType.kBrushed);
         backRightMotor = new CANSparkMax(Constants.kBackRightDriveId, MotorType.kBrushed);
@@ -56,21 +56,13 @@ public class Drive extends Subsystem {
         frontRightMotor.setIdleMode(IdleMode.kBrake);
 
         driveSystem = new DifferentialDrive(frontLeftMotor, frontRightMotor);
-
-        
-        // Attach IMU
-        try {
-            navX = new AHRS(SPI.Port.kMXP);
-            navX.enableLogging(true);
-        } catch (RuntimeException ex) {
-            DriverStation.reportError("Error instantiating navX MXP:  " + ex.getMessage(), true);
-        }
     }
 
-    public static void drive(double leftDrive, double rightDrive, double turn) {
-        leftDrive *= speedLimit;
-        rightDrive *= speedLimit;
-        turn *= speedLimit;
+    public void drive(double leftDrive, double rightDrive, double turn) {
+        leftDrive *= 0.75;
+        turn *= 0.75;
+     
+    
     
         if(enableFilter){
           leftDrive = filterLeft.calculate(leftDrive);
@@ -78,13 +70,17 @@ public class Drive extends Subsystem {
           turn = filterTurn.calculate(turn);
         }
        
-        driveSystem.tankDrive(leftDrive, -rightDrive);
+
+        SmartDashboard.putNumber("Left  Output", leftDrive * 100);
+        SmartDashboard.putNumber("Turn Output", turn * 100);
+
+        driveSystem.arcadeDrive(leftDrive, turn);
     }
 
 
     // STATE CONTROLS --------------------------------------------------->
 
-    public static void toggleDriveBrake() {
+    public void toggleBrakes() {
         brakeMode = !brakeMode;
         if(brakeMode){
             enableDriveBrake();
@@ -93,17 +89,17 @@ public class Drive extends Subsystem {
         }
     }
 
-    public static void enableDriveBrake() {
+    public void enableDriveBrake() {
         frontLeftMotor.setIdleMode(IdleMode.kBrake);
         frontRightMotor.setIdleMode(IdleMode.kBrake);
     }
 
-    public static void disableDriveBrake() {
+    public void disableDriveBrake() {
         frontLeftMotor.setIdleMode(IdleMode.kCoast);
         frontRightMotor.setIdleMode(IdleMode.kCoast);
     }
 
-    public static void setSpeedLimit(double limit){
+    public void setSpeedLimit(double limit){
         speedLimit = limit;
     }
 
@@ -125,7 +121,7 @@ public class Drive extends Subsystem {
             backRightMotor.getLastError() != REVLibError.kError 
         );
     }
-    
+
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
         SmartDashboard.putNumber("Left Drivetrain Output", frontLeftMotor.get() * 100);

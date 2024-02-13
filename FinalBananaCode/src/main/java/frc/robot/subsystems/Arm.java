@@ -11,14 +11,14 @@ import frc.lib.Subsystem;
 
 public class Arm extends Subsystem{
     // Motors  
-    private static WPI_TalonSRX leftLeader = new WPI_TalonSRX(5);
-    private static WPI_TalonSRX rightFollower = new WPI_TalonSRX(6);
+    private final WPI_TalonSRX leftLeader = new WPI_TalonSRX(5);
+    private final WPI_TalonSRX rightFollower = new WPI_TalonSRX(6);
 
     // States
-    private static Boolean brakeMode = true;
+    private Boolean brakeMode = true;
 
     // Connect hardware and set configurations
-    public static void armInit() {
+    public void armInit() {
         // Set default configuration
         leftLeader.configFactoryDefault();
         rightFollower.configFactoryDefault();
@@ -32,14 +32,14 @@ public class Arm extends Subsystem{
     }
 
     // Move at velocity from -1 to 1  
-    public static void moveArm(double velocity){
+    public void moveArm(double velocity){
         leftLeader.set(ControlMode.PercentOutput, velocity);
     }
 
 
     // BRAKE CONTROLS --------------------------------------------------->
 
-    public static void toggleArmBrake() {
+    public void toggleBrake() {
         brakeMode = !brakeMode;
         if(brakeMode){
             enableArmBrake();
@@ -48,12 +48,12 @@ public class Arm extends Subsystem{
         }
     }
 
-    public static void enableArmBrake() {
+    public void enableArmBrake() {
         leftLeader.setNeutralMode(NeutralMode.Brake);
         rightFollower.setNeutralMode(NeutralMode.Brake);
     }
 
-    public static void disableArmBrake() {
+    public void disableArmBrake() {
         leftLeader.setNeutralMode(NeutralMode.Coast);
         rightFollower.setNeutralMode(NeutralMode.Coast);
     }
