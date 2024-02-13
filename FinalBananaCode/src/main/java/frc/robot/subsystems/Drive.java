@@ -1,8 +1,10 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.REVLibError;
+import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.cameraserver.CameraServer;
@@ -36,6 +38,7 @@ public class Drive extends Subsystem {
 
     // States
     private static double speedLimit = 1;
+    private static Boolean brakeMode = true;
 
 
     public static void driveInit() {
@@ -48,7 +51,12 @@ public class Drive extends Subsystem {
         // Configure motors
         backLeftMotor.follow(frontLeftMotor);
         backRightMotor.follow(frontRightMotor);
+        
+        frontLeftMotor.setIdleMode(IdleMode.kBrake);
+        frontRightMotor.setIdleMode(IdleMode.kBrake);
+
         driveSystem = new DifferentialDrive(frontLeftMotor, frontRightMotor);
+
         
         // Attach IMU
         try {
@@ -71,6 +79,32 @@ public class Drive extends Subsystem {
         }
        
         driveSystem.tankDrive(leftDrive, -rightDrive);
+    }
+
+
+    // STATE CONTROLS --------------------------------------------------->
+
+    public static void toggleDriveBrake() {
+        brakeMode = !brakeMode;
+        if(brakeMode){
+            enableDriveBrake();
+        } else {
+            disableDriveBrake();
+        }
+    }
+
+    public static void enableDriveBrake() {
+        frontLeftMotor.setIdleMode(IdleMode.kBrake);
+        frontRightMotor.setIdleMode(IdleMode.kBrake);
+    }
+
+    public static void disableDriveBrake() {
+        frontLeftMotor.setIdleMode(IdleMode.kCoast);
+        frontRightMotor.setIdleMode(IdleMode.kCoast);
+    }
+
+    public static void setSpeedLimit(double limit){
+        speedLimit = limit;
     }
 
       

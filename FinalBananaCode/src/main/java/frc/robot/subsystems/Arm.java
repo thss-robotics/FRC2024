@@ -39,21 +39,21 @@ public class Arm extends Subsystem{
 
     // BRAKE CONTROLS --------------------------------------------------->
 
-    public static void toggleBrake() {
+    public static void toggleArmBrake() {
         brakeMode = !brakeMode;
         if(brakeMode){
-           enableBrake();
+            enableArmBrake();
         } else {
-            disableBrake();
+            disableArmBrake();
         }
     }
 
-    public static void enableBrake() {
+    public static void enableArmBrake() {
         leftLeader.setNeutralMode(NeutralMode.Brake);
         rightFollower.setNeutralMode(NeutralMode.Brake);
     }
 
-    public static void disableBrake() {
+    public static void disableArmBrake() {
         leftLeader.setNeutralMode(NeutralMode.Coast);
         rightFollower.setNeutralMode(NeutralMode.Coast);
     }

@@ -34,8 +34,28 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic(){
-      
-      // Brake Mode Testing  
+      // Set arm brakes
+      if(controller.getAButton()){
+        Arm.toggleArmBrake();
+      }
+
+      // Set drive brakes
+      if(controller.getBButton()){
+        Drive.toggleDriveBrake();
+      }
+
+      // Set drive speed limit
+      double speedLimit;
+      int povAngle = controller.getPOV();
+        
+      if (povAngle == 0) {
+          speedLimit = 1; // Set speed to maximum if POV is 0
+      } else if (povAngle > 0) {
+          speedLimit = ((double)povAngle / 315.0) * (1.0 - 0.0) + 0.0; // Scale linearly between 0 and 315 to a speed scale of 0 to 1
+      } else {
+          speedLimit = 0; // Default or safety speed
+      }
+      Drive.setSpeedLimit(speedLimit);
     }
 
 
@@ -60,14 +80,12 @@ public class Robot extends TimedRobot {
       double armVelocity = controller.getLeftTriggerAxis() - controller.getRightTriggerAxis();
       Arm.moveArm(armVelocity);
 
-      // Set arm brakes
-      if(controller.getAButton()){
-        Arm.toggleBrake();
-      }
+      
     }
 
     @Override
     public void disabledInit() {
-      
+      Arm.disableArmBrake();
+      Drive.disableDriveBrake();
     }
 }
