@@ -1,8 +1,4 @@
-package frc.robot;
-
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.InvertType;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
+package frc.robot; 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.cameraserver.CameraServer;
@@ -10,6 +6,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drive;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Shooter;
 
 public class Robot extends TimedRobot {
     WPI_TalonSRX leftLeader = new WPI_TalonSRX(5);
@@ -27,6 +25,8 @@ public class Robot extends TimedRobot {
         // Initialize subsystems
         Arm.armInit();
         Drive.driveInit();
+        Intake.intakeInit();
+        Shooter.shooterInit();
 
         // Start camera server
         CameraServer.startAutomaticCapture();
@@ -43,6 +43,8 @@ public class Robot extends TimedRobot {
       if(controller.getBButton()){
         Drive.toggleDriveBrake();
       }
+
+   
 
       // Set drive speed limit
       double speedLimit;
@@ -67,6 +69,35 @@ public class Robot extends TimedRobot {
       double turn = controller.getLeftX();
         
       Drive.drive(leftDrive, rightDrive, turn);
+
+      // Move arm
+      double armVelocity = controller.getLeftTriggerAxis() - controller.getRightTriggerAxis();
+      Arm.moveArm(armVelocity);
+
+      // Toggle Intake
+      if(controller.getXButton()){
+        if(Intake.intakeRunning)
+        {
+          Intake.intakeOff();
+        } else{
+          Intake.intakeOn();
+        }  
+      }
+
+      // Toggle Shooter
+      if(controller.getYButton()){
+        if(Shooter.shooting)
+        {
+          Shooter.shoot();
+        } else{
+          Shooter.driveShooterMotors(0);
+        }  
+      }
+
+      // Set drive brakes
+      if(controller.getXButton()){
+        Intake.intakeOn();
+      }
     }
 
     @Override 
