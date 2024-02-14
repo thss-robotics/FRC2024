@@ -71,12 +71,21 @@ public class Robot extends TimedRobot {
       // Drive Inputs
       double leftDrive = -controller.getRawAxis(0);
       double turn = controller.getRawAxis(1);
-
       // Arm Inputs
       double armVelocity = controller.getRawAxis(3);
       Boolean runIntake = controller.getRawButton(1);
       Boolean runShooter = controller.getRawButton(2);
         
+
+      if (controlSchemaArm) {
+        shooter.runShooterMotors(controller.getRawAxis(1));
+        intake.runIntakeMotor(controller.getRawAxis(3));
+        leftDrive = 0;
+        turn = 0;
+        armVelocity = 0;
+      }
+
+      
       // Run subsystems
       drive.drive(leftDrive, 0, turn);
       arm.moveArm(armVelocity);
@@ -89,7 +98,7 @@ public class Robot extends TimedRobot {
       } 
 
       // Run Shooter
-      if(runShooter || !shooter.shooterRunning){
+      if(runShooter && !shooter.shooterRunning){
         shooter.shoot();
       } else {
         shooter.stop();
