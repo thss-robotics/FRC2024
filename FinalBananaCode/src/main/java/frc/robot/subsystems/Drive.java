@@ -58,23 +58,35 @@ public class Drive extends Subsystem {
         driveSystem = new DifferentialDrive(frontLeftMotor, frontRightMotor);
     }
 
-    public void drive(double leftDrive, double rightDrive, double turn) {
-        leftDrive *= 0.75;
-        turn *= 0.75;
+    public void arcadeDrive(double speed, double turn) {
+        speed *= 1;
+        turn *= 1;
      
-    
-    
         if(enableFilter){
-          leftDrive = filterLeft.calculate(leftDrive);
-          rightDrive = filterRight.calculate(rightDrive);
+          speed = filterLeft.calculate(speed);
           turn = filterTurn.calculate(turn);
         }
        
 
-        SmartDashboard.putNumber("Left  Output", leftDrive * 100);
+        SmartDashboard.putNumber("Left  Output", speed * 100);
         SmartDashboard.putNumber("Turn Output", turn * 100);
 
-        driveSystem.arcadeDrive(leftDrive, turn);
+        driveSystem.arcadeDrive(speed, turn);
+    }
+
+    public void tankDrive(double leftDrive, double rightDrive) {
+        leftDrive *= 1;
+        rightDrive *= 1;
+     
+        if(enableFilter){
+          leftDrive = filterLeft.calculate(leftDrive);
+          rightDrive = filterRight.calculate(rightDrive);
+        }
+
+        SmartDashboard.putNumber("Left  Output", leftDrive * 100);
+        SmartDashboard.putNumber("Right Output", rightDrive * 100);
+
+        driveSystem.tankDrive(leftDrive, rightDrive);
     }
 
 
