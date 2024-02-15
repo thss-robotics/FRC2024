@@ -7,6 +7,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.Subsystem;
 
 public class Intake extends Subsystem {
+    private static Intake instance = null;
+
     // Motors
     private CANSparkMax intakeMotor;
 
@@ -14,9 +16,14 @@ public class Intake extends Subsystem {
     public Boolean intakeRunning = true;
     private static double intakeSpeed = 1;
 
+    public static Intake getInstance() {
+        if (instance == null) {
+            instance = new Intake();
+        }
+        return instance;
+    }
 
-
-    public void intakeInit() {
+    private Intake() {
         // Attach motors
         intakeMotor = new CANSparkMax(7, MotorType.kBrushless);
     }
