@@ -7,6 +7,8 @@ import frc.lib.Subsystem;
 
 
 public class Shooter extends Subsystem{
+    private static Shooter instance = null;
+
     // Motors
     private Spark LowerShooterMotor;
     private Spark UpperShooterMotor;
@@ -18,8 +20,14 @@ public class Shooter extends Subsystem{
     public Boolean shooterRunning = true;
     private double shootSpeed = 0.6;
 
+    public static Shooter getInstance() {
+        if (instance == null) {
+            instance = new Shooter();
+        }
+        return instance;
+    }
 
-    public void shooterInit() {
+    private Shooter() {
         // Attach motors
         LowerShooterMotor = new Spark(0);
         UpperShooterMotor = new Spark(1);

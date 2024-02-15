@@ -12,10 +12,10 @@ import frc.robot.subsystems.Shooter;
 
 public class Robot extends TimedRobot {
     // Subsystems
-    Shooter shooter = new Shooter();
-    Drive drive = new Drive();
-    Intake intake = new Intake();
-    Arm arm = new Arm();
+    Shooter shooter;
+    Drive drive;
+    Intake intake;
+    Arm arm ;
 
     // Controllers
     XboxController controller;
@@ -28,19 +28,22 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotInit() {
-        // Set up controller or joystick 
-        controller = new XboxController(0);
+      try {
+        drive = Drive.getInstance();
+        arm = Arm.getInstance();
+        intake = Intake.getInstance();
+        shooter = Shooter.getInstance();
+      } catch (Throwable t) {
+        throw t;
+     }
 
-        // Initialize subsystems
-        arm.armInit();
-        drive.driveInit();
-        intake.intakeInit();
-        shooter.shooterInit();
+      // Set up controller or joystick 
+      controller = new XboxController(0);
 
-        //Start camera server
-        if(Constants.kEnableCameraServer){
-          CameraServer.startAutomaticCapture();
-        }
+      //Start camera server
+      if(Constants.kEnableCameraServer){
+        CameraServer.startAutomaticCapture();
+      }
     }
 
     @Override

@@ -1,24 +1,36 @@
 package frc.robot.subsystems;
 
+import frc.lib.Subsystem;
+
+import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.lib.Subsystem;
-
 
 public class Arm extends Subsystem{
+    private static Arm instance = null;
+
     // Motors  
     private final WPI_TalonSRX leftLeader = new WPI_TalonSRX(5);
     private final WPI_TalonSRX rightFollower = new WPI_TalonSRX(6);
 
     // States
+    public enum ArmState { MOVING, HOLDING, DISABLED } // Idle, Automatic, Brake stets, Error, Calibration, Lifting
+    private ArmState armState = ArmState.DISABLED;
+
     private Boolean brakeMode = true;
 
-    // Connect hardware and set configurations
-    public void armInit() {
+    public static Arm getInstance() {
+        if (instance == null) {
+            instance = new Arm();
+        }
+        return instance;
+    }
+
+    private Arm() {
         // Set default configuration
         leftLeader.configFactoryDefault();
         rightFollower.configFactoryDefault();
@@ -29,11 +41,21 @@ public class Arm extends Subsystem{
 
         // Set brake state to brake by default
         leftLeader.setNeutralMode(NeutralMode.Brake);
+
+        armState = ArmState.MOVING;
     }
 
     // Move at velocity from -1 to 1  
     public void moveArm(double velocity){
-        leftLeader.set(ControlMode.PercentOutput, velocity);
+        if (armState != ArmState.DISABLED) {
+            leftLeader.set(ControlMode.PercentOutput, velocity);
+            armState = ArmState.MOVING;
+        }
+    }
+
+    // STATE CONTROLS --------------------------------------------------->
+    public ArmState getARmState(){
+        return armState;
     }
 
 
@@ -64,18 +86,30 @@ public class Arm extends Subsystem{
     @Override
     public void stop() {
         leftLeader.set(0);
+        armState = ArmState.HOLDING;
     }
+
 
     @Override
     public boolean checkSystem() {
-        return leftLeader.isAlive();
+        // Motor Checks
+        boolean motorsOk =  leftLeader.getLastError() != ErrorCode.OK && leftLeader.isAlive() &&
+                            rightFollower.getLastError() != ErrorCode.OK && rightFollower.isAlive();
+
+        // Combine checks
+        boolean systemOk = motorsOk;
+
+        // Output status to SmartDashboard or console for debugging
+        SmartDashboard.putBoolean("System Check - Motors OK", motorsOk);
+        SmartDashboard.putBoolean("System Check - Overall Status", systemOk);
+
+        return systemOk;
     }
 
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
-       SmartDashboard.putBoolean("Arm Brakes", brakeMode);
-       SmartDashboard.putNumber("Arm Output", leftLeader.get() * 100);
+        SmartDashboard.putBoolean("Arm Brakes", brakeMode);
+        SmartDashboard.putNumber("Arm Output", leftLeader.getMotorOutputPercent() * 100);
+        SmartDashboard.putString("Arm State", armState.toString());
     }
-
-    
 }
