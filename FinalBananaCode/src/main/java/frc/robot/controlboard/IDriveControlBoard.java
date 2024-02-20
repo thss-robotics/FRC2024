@@ -14,5 +14,4 @@ public interface IDriveControlBoard {
     boolean getScore();
 
     boolean getAutoAlign();
-    
 }

@@ -13,8 +13,16 @@ public class Intake extends Subsystem {
     private CANSparkMax intakeMotor;
 
     // States
+    public enum IntakeState {
+        OFF,
+        INTAKING,
+        EJECTING
+    }
+    private IntakeState currentState = IntakeState.OFF;
+    
     public Boolean intakeRunning = true;
-    private static double intakeSpeed = 1;
+    private static double INTAKE_SPEED = 1.0;
+    private static double EJECT_SPEED = -0.5;
 
     public static Intake getInstance() {
         if (instance == null) {
@@ -26,26 +34,27 @@ public class Intake extends Subsystem {
     private Intake() {
         // Attach motors
         intakeMotor = new CANSparkMax(7, MotorType.kBrushless);
+        intakeMotor.setSmartCurrentLimit(50);
     }
 
-    public void runIntakeMotor(double speed) {
-        if(speed == 0 ){
-            intakeRunning = false;
-        } else {
-            intakeRunning = true;
+    public void setIntakeState(IntakeState newState) {
+        currentState = newState;
+        updateMotor();
+    }
+
+    private void updateMotor() {
+        switch (currentState) {
+            case INTAKING:
+                intakeMotor.set(INTAKE_SPEED);
+                break;
+            case EJECTING:
+                intakeMotor.set(EJECT_SPEED);
+                break;
+            case OFF:
+            default:
+                intakeMotor.stopMotor();
+                break;
         }
-        intakeMotor.set(speed);
-    }
-
-
-    // STATE CONTROLS --------------------------------------------------->
-
-    public void intakeOn() {
-        runIntakeMotor(intakeSpeed);
-    }
-
-     public void intakeOff() {
-         runIntakeMotor(0);
     }
       
     // BASE CONTROLS --------------------------------------------------->
@@ -58,14 +67,15 @@ public class Intake extends Subsystem {
 
     @Override
     public boolean checkSystem() {
-        return (
-           true 
-        );
+        boolean motorOK = intakeMotor.getFaults() == 0;
+        return motorOK;
     }
+
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
         SmartDashboard.putBoolean("Is Intaking", intakeRunning);
         SmartDashboard.putNumber("Intake Speed", intakeMotor.get() * 100);
+        SmartDashboard.putNumber("Intake Current", intakeMotor.getOutputCurrent());
+        SmartDashboard.putNumber("Intake Speed", INTAKE_SPEED);
     }
- 
 }

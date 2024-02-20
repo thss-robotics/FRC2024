@@ -19,8 +19,8 @@ public class MainDriveControlBoard implements IDriveControlBoard {
     private final Joystick mRotateStick;
 
     private MainDriveControlBoard() {
-        mTranslateStick = new Joystick(Constants.kMainThrottleJoystickPort);
-        mRotateStick = new Joystick(Constants.kMainTurnJoystickPort);
+        mTranslateStick = new Joystick(Constants.kMainLeftJoystickPort);
+        mRotateStick = new Joystick(Constants.kMainRightJoystickPort);
     }
 
     @Override

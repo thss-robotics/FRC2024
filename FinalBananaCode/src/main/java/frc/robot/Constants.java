@@ -10,15 +10,12 @@ public class Constants {
     // Controls
     public static final boolean kForceDriveGamepad = false;
     public static final int kDriveGamepadPort = 0;
-    public static final int kMainThrottleJoystickPort = 0;
-    public static final int kMainTurnJoystickPort = 1;
-    public static final int kOperatorControllerPort = 2;
+    public static final int kMainLeftJoystickPort = 1;
+    public static final int kMainRightJoystickPort = 2;
+    public static final int kOperatorControllerPort = 3;
     public static final double kDriveJoystickThreshold = 0.075;
     public static final double kJoystickThreshold = 0.1;
 
-    // Modes
-    public static Boolean kEnableControllerMode = false;
-
     // Devices
-    public static Boolean kEnableCameraServer = false;
+    public static Boolean kEnableCameraServer = true;
 }

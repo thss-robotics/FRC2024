@@ -8,6 +8,7 @@ import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Arm extends Subsystem{
@@ -19,8 +20,9 @@ public class Arm extends Subsystem{
 
     // States
     public enum ArmState { MOVING, HOLDING, DISABLED } // Idle, Automatic, Brake stets, Error, Calibration, Lifting
-    private ArmState armState = ArmState.DISABLED;
+    private ArmState currentState = ArmState.DISABLED;
 
+    private SlewRateLimiter armFilter = new SlewRateLimiter(1.5);
     private Boolean brakeMode = true;
 
     public static Arm getInstance() {
@@ -42,20 +44,21 @@ public class Arm extends Subsystem{
         // Set brake state to brake by default
         leftLeader.setNeutralMode(NeutralMode.Brake);
 
-        armState = ArmState.MOVING;
+        currentState = ArmState.MOVING;
     }
 
     // Move at velocity from -1 to 1  
     public void moveArm(double velocity){
-        if (armState != ArmState.DISABLED) {
+        if (currentState != ArmState.DISABLED) {
+            velocity = armFilter.calculate(velocity);
             leftLeader.set(ControlMode.PercentOutput, velocity);
-            armState = ArmState.MOVING;
+            currentState = ArmState.MOVING;
         }
     }
 
     // STATE CONTROLS --------------------------------------------------->
-    public ArmState getARmState(){
-        return armState;
+    public ArmState getArmState(){
+        return currentState;
     }
 
 
@@ -86,7 +89,7 @@ public class Arm extends Subsystem{
     @Override
     public void stop() {
         leftLeader.set(0);
-        armState = ArmState.HOLDING;
+        currentState = ArmState.HOLDING;
     }
 
 
@@ -110,6 +113,6 @@ public class Arm extends Subsystem{
     public void outputTelemetry(boolean isRobotDisabled) {
         SmartDashboard.putBoolean("Arm Brakes", brakeMode);
         SmartDashboard.putNumber("Arm Output", leftLeader.getMotorOutputPercent() * 100);
-        SmartDashboard.putString("Arm State", armState.toString());
+        SmartDashboard.putString("Arm State", currentState.toString());
     }
 }
