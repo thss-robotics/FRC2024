@@ -1,6 +1,7 @@
 package frc.robot; 
 
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
@@ -20,6 +21,7 @@ public class Robot extends TimedRobot {
 
     // Controllers
     XboxController controller;
+    Joystick controlBoard;
     Joystick joystickLeft;
     Joystick joystickRight;
 
@@ -45,6 +47,7 @@ public class Robot extends TimedRobot {
       controller = new XboxController(0);
       joystickLeft = new Joystick(2);
       joystickRight = new Joystick(1);
+      controlBoard = new Joystick(3);
 
       //Start camera server
       if(Constants.kEnableCameraServer){
@@ -70,6 +73,7 @@ public class Robot extends TimedRobot {
         } else if(joystickLeft.getRawButton(11)){
           intakeDriveMode = false;
         }
+
       }
       catch (Throwable t) {
         throw t;
@@ -100,19 +104,26 @@ public class Robot extends TimedRobot {
         drive.tankDrive(leftDrive, rightDrive);
         
 
-        if(joystickLeft.getPOV() == 0){
+        if(controlBoard.getRawAxis(1) == 1){
           armVelocity = 1;
-        } else if(joystickLeft.getPOV() == 180){
+        } else if(controlBoard.getRawAxis(1)== -1){
           armVelocity = -1;
         }
 
-        if(joystickRight.getPOV() == 0){
+
+        if(joystickLeft.getPOV() == 0){
           armVelocity = 0.75;
-        } else if(joystickRight.getPOV() == 180){
+        } else if(joystickLeft.getPOV() == 180){
           armVelocity = -0.75;
         }
 
-        arm.moveArm(armVelocity * 0.5);
+        if(joystickRight.getPOV() == 0){
+          armVelocity = 0.5;
+        } else if(joystickRight.getPOV() == 180){
+          armVelocity = -0.5;
+        }
+
+        arm.moveArm(armVelocity);
 
         // Run Intake
         if(runIntake){
