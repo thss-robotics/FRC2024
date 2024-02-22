@@ -25,7 +25,7 @@ public class Drive extends Subsystem {
     private final double kTurnCorrection = 0.1; 
 
     // Motors
-    public CANSparkMax frontLeftMotor; // Used for encoder
+    private CANSparkMax frontLeftMotor;
     private CANSparkMax frontRightMotor;
     private CANSparkMax backLeftMotor;
     private CANSparkMax backRightMotor;

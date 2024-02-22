@@ -12,6 +12,7 @@ import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.SparkMaxAbsoluteEncoder;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Arm extends Subsystem{
@@ -22,8 +23,7 @@ public class Arm extends Subsystem{
     private final WPI_TalonSRX rightFollower = new WPI_TalonSRX(6);
 
     // Encoder
-    private static final SparkMaxAbsoluteEncoder.Type kAbsEncType = SparkMaxAbsoluteEncoder.Type.kDutyCycle;
-    private AbsoluteEncoder armEncoder;
+    private DutyCycleEncoder  armEncoder;
 
     // States
     public enum ArmState { MOVING, HOLDING, DISABLED } // Idle, Automatic, Brake stets, Error, Calibration, Lifting
@@ -52,7 +52,7 @@ public class Arm extends Subsystem{
         leftLeader.setNeutralMode(NeutralMode.Brake);
 
         // Set up encoder
-        armEncoder = Drive.getInstance().frontLeftMotor.getAbsoluteEncoder(kAbsEncType);
+        armEncoder = new DutyCycleEncoder(0);
 
         currentState = ArmState.MOVING;
     }
@@ -64,10 +64,6 @@ public class Arm extends Subsystem{
             leftLeader.set(ControlMode.PercentOutput, velocity);
             currentState = ArmState.MOVING;
         }
-
-        SmartDashboard.putNumber("Arm Velocity", armEncoder.getVelocity());
-        SmartDashboard.putNumber("Arm Position Converstion Factor", armEncoder.getPositionConversionFactor());
-        SmartDashboard.putNumber("Arm Angle", armEncoder.getPosition());
     }
 
     // STATE CONTROLS --------------------------------------------------->
@@ -129,8 +125,10 @@ public class Arm extends Subsystem{
         SmartDashboard.putNumber("Arm Output", leftLeader.getMotorOutputPercent() * 100);
         SmartDashboard.putString("Arm State", currentState.toString());
 
-        SmartDashboard.putNumber("Arm Velocity", armEncoder.getVelocity());
-        SmartDashboard.putNumber("Arm Position Converstion Factor", armEncoder.getPositionConversionFactor());
-        SmartDashboard.putNumber("Arm Angle", armEncoder.getPosition());
+        // Encoder
+        SmartDashboard.putBoolean("Encoder Connected", armEncoder.isConnected());
+        SmartDashboard.putNumber("Arm Position", armEncoder.getAbsolutePosition());
+        SmartDashboard.putNumber("Arm Distance", armEncoder.getDistance());
+        SmartDashboard.putNumber("Arm Frequency", armEncoder.getFrequency());
     }
 }
