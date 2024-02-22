@@ -36,7 +36,6 @@ public class Robot extends TimedRobot {
         intake = Intake.getInstance();
         shooter = Shooter.getInstance();
 
-
         arm.enableArmBrake();
         drive.enableDriveBrake(); 
       } catch (Throwable t) {
