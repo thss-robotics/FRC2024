@@ -1,12 +1,15 @@
 package frc.robot.subsystems;
 
 import frc.lib.Subsystem;
+import frc.robot.Constants;
 
 import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.SparkMaxAbsoluteEncoder;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -17,6 +20,10 @@ public class Arm extends Subsystem{
     // Motors  
     private final WPI_TalonSRX leftLeader = new WPI_TalonSRX(5);
     private final WPI_TalonSRX rightFollower = new WPI_TalonSRX(6);
+
+    // Encoder
+    private static final SparkMaxAbsoluteEncoder.Type kAbsEncType = SparkMaxAbsoluteEncoder.Type.kDutyCycle;
+    private AbsoluteEncoder armEncoder;
 
     // States
     public enum ArmState { MOVING, HOLDING, DISABLED } // Idle, Automatic, Brake stets, Error, Calibration, Lifting
@@ -44,6 +51,9 @@ public class Arm extends Subsystem{
         // Set brake state to brake by default
         leftLeader.setNeutralMode(NeutralMode.Brake);
 
+        // Set up encoder
+        armEncoder = Drive.getInstance().frontLeftMotor.getAbsoluteEncoder(kAbsEncType);
+
         currentState = ArmState.MOVING;
     }
 
@@ -54,6 +64,10 @@ public class Arm extends Subsystem{
             leftLeader.set(ControlMode.PercentOutput, velocity);
             currentState = ArmState.MOVING;
         }
+
+        SmartDashboard.putNumber("Arm Velocity", armEncoder.getVelocity());
+        SmartDashboard.putNumber("Arm Position Converstion Factor", armEncoder.getPositionConversionFactor());
+        SmartDashboard.putNumber("Arm Angle", armEncoder.getPosition());
     }
 
     // STATE CONTROLS --------------------------------------------------->
@@ -114,5 +128,9 @@ public class Arm extends Subsystem{
         SmartDashboard.putBoolean("Arm Brakes", brakeMode);
         SmartDashboard.putNumber("Arm Output", leftLeader.getMotorOutputPercent() * 100);
         SmartDashboard.putString("Arm State", currentState.toString());
+
+        SmartDashboard.putNumber("Arm Velocity", armEncoder.getVelocity());
+        SmartDashboard.putNumber("Arm Position Converstion Factor", armEncoder.getPositionConversionFactor());
+        SmartDashboard.putNumber("Arm Angle", armEncoder.getPosition());
     }
 }
