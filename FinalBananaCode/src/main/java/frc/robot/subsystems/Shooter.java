@@ -5,20 +5,24 @@ import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.Subsystem;
 
-
-public class Shooter extends Subsystem{
+public class Shooter extends Subsystem {
     private static Shooter instance = null;
 
     // Motors
-    private Spark LowerShooterMotor;
-    private Spark UpperShooterMotor;
+    private Spark lowerShooterMotor;
+    private Spark upperShooterMotor;
 
     // Filters
     private SlewRateLimiter filter = new SlewRateLimiter(2);
   
     // States
-    public Boolean shooterRunning = true;
-    private double shootSpeed = 0.6;
+    public enum ShooterState {
+        OFF,
+        SHOOTING
+    }
+
+    private ShooterState currentState = ShooterState.OFF;
+    private double shootSpeed = 1; 
 
     public static Shooter getInstance() {
         if (instance == null) {
@@ -29,57 +33,52 @@ public class Shooter extends Subsystem{
 
     private Shooter() {
         // Attach motors
-        LowerShooterMotor = new Spark(0);
-        UpperShooterMotor = new Spark(1);
+        lowerShooterMotor = new Spark(0);
+        upperShooterMotor = new Spark(1);
       
         // Configure motors
-        LowerShooterMotor.addFollower(UpperShooterMotor);
-        UpperShooterMotor.setInverted(false);
+        upperShooterMotor.setInverted(false);
+        lowerShooterMotor.setInverted(false);
     }
 
-    public void runShooterMotors(double speed) {
-        // Update state
-        if(speed == 0){
-            shooterRunning = false;
+    public void setShooterState(ShooterState newState, double speed) {
+        currentState = newState;
+        updateMotors(speed);
+    }
+
+    private void updateMotors(double speed) {
+        if (currentState == ShooterState.SHOOTING) {
+            speed = filter.calculate(speed);
+            lowerShooterMotor.set(speed);
+            upperShooterMotor.set(speed); 
         } else {
-            shooterRunning = true;
+            lowerShooterMotor.set(0);
+            upperShooterMotor.set(0);
         }
-
-        // Set speed
-        speed = filter.calculate(speed);
-        LowerShooterMotor.set(speed);
-
     }
-
-    // STATE CONTROLS --------------------------------------------------->
 
     public void shoot() {
-        shooterRunning = true;
-        runShooterMotors(shootSpeed);
+        setShooterState(ShooterState.SHOOTING, shootSpeed);
     }
-
-    // BASE CONTROLS --------------------------------------------------->
 
     @Override
     public void stop() {
-        shooterRunning = false;
-        runShooterMotors(0);
+        setShooterState(ShooterState.OFF, 0);
     }
 
     @Override
     public boolean checkSystem() {
-        return (
-           LowerShooterMotor.isAlive() ||
-           UpperShooterMotor.isAlive()
-        );
+        return  lowerShooterMotor.isAlive() &&
+                upperShooterMotor.isAlive();
     }
 
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
-        SmartDashboard.putBoolean("Is Shooting", shooterRunning);
-        SmartDashboard.putNumber("Lower Shooter", LowerShooterMotor.get() * 100);
-        SmartDashboard.putNumber("Upper Shooter", UpperShooterMotor.get() * 100);
+        SmartDashboard.putString("Shooter State", currentState.toString());
         SmartDashboard.putNumber("Shooter Speed", shootSpeed * 100);
+        
+        SmartDashboard.putNumber("Lower Shooter Speed", lowerShooterMotor.get() * 100);
+        SmartDashboard.putNumber("Upper Shooter Speed", upperShooterMotor.get() * 100);
+        SmartDashboard.putNumber("Filtered Shooter Speed", filter.calculate(shootSpeed) * 100);
     }
-    
 }

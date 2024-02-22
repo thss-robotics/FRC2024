@@ -32,7 +32,7 @@ import com.team254.lib.swerve.ChassisSpeeds;
 import com.team254.lib.util.CrashTracker;
 import com.team254.lib.util.LatchedBoolean;
 import com.team254.lib.util.TimeDelayedBoolean;
-import com.team254.lib.util.ToggleBoolean;
+import com.team254.lib.util.T   oggleBoolean;
 import com.team254.lib.util.Util;
 
 import edu.wpi.first.wpilibj.PowerDistribution;

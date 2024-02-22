@@ -87,7 +87,7 @@ public class Drive extends Subsystem {
         }
 
         // Drive
-        driveSystem.arcadeDrive(speed, turn);
+        driveSystem.arcadeDrive(speed, turn, true);
     }
 
     public void tankDrive(double leftDrive, double rightDrive) {
@@ -103,7 +103,7 @@ public class Drive extends Subsystem {
         SmartDashboard.putNumber("Left  Output", leftDrive * 100);
         SmartDashboard.putNumber("Right Output", rightDrive * 100);
 
-        driveSystem.tankDrive(leftDrive, rightDrive);
+        driveSystem.tankDrive(leftDrive, rightDrive, true);
     }
 
 
