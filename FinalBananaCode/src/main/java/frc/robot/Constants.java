@@ -18,4 +18,11 @@ public class Constants {
 
     // Devices
     public static Boolean kEnableCameraServer = true;
+
+    // Arm Positions
+    public static final double kArmDriveAbsolutePosition = 0.156;
+    public static final double kArmIntakeAbsolutePosition = 0;
+    public static final double kArmSpeakerAbsolutePosition = 0.062;
+    public static final double kArmAmpAbsolutePosition = 0.262;
+    public static final double kArmChainAbsolutePosition = 0.247;
 }

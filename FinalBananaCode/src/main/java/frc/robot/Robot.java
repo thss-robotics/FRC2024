@@ -73,6 +73,25 @@ public class Robot extends TimedRobot {
           intakeDriveMode = false;
         }
 
+
+
+        if(controlBoard.getRawButton(1)){
+          arm.moveToDrivePosition();
+        }
+        if(controlBoard.getRawButton(2)){
+          arm.moveToIntakePosition();
+        }
+        if(controlBoard.getRawButton(3)){
+          arm.moveToSpeakerPosition();
+        }
+        if(controlBoard.getRawButton(4)){
+          arm.moveToAmpPosition();
+        }
+        if(controlBoard.getRawButton(5)){
+          arm.moveToChainPosition();
+        }
+
+        outputTelemetries();
       }
       catch (Throwable t) {
         throw t;
@@ -153,8 +172,11 @@ public class Robot extends TimedRobot {
 
     @Override
     public void testPeriodic(){
+      arm.armPeriodic();
+     
+
       // Diagnostics
-      outputTelemetries();
+      //outputTelemetries();
     }
 
     @Override

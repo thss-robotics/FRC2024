@@ -11,6 +11,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.SparkMaxAbsoluteEncoder;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -26,11 +27,21 @@ public class Arm extends Subsystem{
     private DutyCycleEncoder  armEncoder;
 
     // States
-    public enum ArmState { MOVING, HOLDING, DISABLED } // Idle, Automatic, Brake stets, Error, Calibration, Lifting
+    public enum ArmState { MOVING, HOLDING, DISABLED } 
     private ArmState currentState = ArmState.DISABLED;
+
+    public enum ArmPosition { DRIVE, INTAKE, SPEAKER, AMP, CHAIN } 
+    private ArmPosition currentPosition = ArmPosition.DRIVE;
 
     private SlewRateLimiter armFilter = new SlewRateLimiter(1.5);
     private Boolean brakeMode = true;
+
+    // PID
+    private PIDController pidController;
+    private double targetPosition;
+    private final double minEffectivePower = 0.3;
+
+     
 
     public static Arm getInstance() {
         if (instance == null) {
@@ -53,18 +64,89 @@ public class Arm extends Subsystem{
 
         // Set up encoder
         armEncoder = new DutyCycleEncoder(0);
+        armEncoder.setPositionOffset(0.688);
 
         currentState = ArmState.MOVING;
+        currentPosition = ArmPosition.DRIVE;
+
+        // PID 
+        pidController = new PIDController(6, 0.2, 0.2);
+        pidController.setTolerance(0.005);
+        pidController.setIntegratorRange(-0.4, 0.4);
     }
 
     // Move at velocity from -1 to 1  
     public void moveArm(double velocity){
         if (currentState != ArmState.DISABLED) {
+            if(velocity > 0.7){
+                velocity = 0.7;
+            }
+            if(velocity < -0.7){
+                velocity = -0.7;
+            }
             velocity = armFilter.calculate(velocity);
             leftLeader.set(ControlMode.PercentOutput, velocity);
             currentState = ArmState.MOVING;
         }
     }
+
+    public void moveArmToPosition(double absolutePosition){
+        targetPosition = absolutePosition;
+    }
+
+    public void armPeriodic() {
+        // Check the current arm position and adjust if necessary
+        double currentPosition = getArmPosition(); // Gets the current encoder position
+
+        double pidOutput = pidController.calculate(currentPosition, targetPosition);
+
+            if (Math.abs(pidOutput) > 0 && Math.abs(pidOutput) < minEffectivePower) {
+                // Adjust the pidOutput to at least the minimum effective power
+                pidOutput = Math.copySign(minEffectivePower, pidOutput);
+            }
+
+        if (!pidController.atSetpoint()) { // Check if we're at the target position
+            moveArm(pidOutput);
+        } else {
+            moveArm(0);
+        }
+    }
+
+    public void moveToDrivePosition() {
+        moveArmToPosition(Constants.kArmDriveAbsolutePosition);
+    }
+    
+    public void moveToIntakePosition() {
+        moveArmToPosition(Constants.kArmIntakeAbsolutePosition);
+    }
+    
+    public void moveToSpeakerPosition() {
+        moveArmToPosition(Constants.kArmSpeakerAbsolutePosition);
+    }
+    
+    public void moveToAmpPosition() {
+        moveArmToPosition(Constants.kArmAmpAbsolutePosition);
+    }
+    
+    public void moveToChainPosition() {
+        moveArmToPosition(Constants.kArmChainAbsolutePosition);
+    }
+    
+    
+
+    public double getArmPosition(){
+        double relativeArmPosition = armEncoder.getAbsolutePosition() - armEncoder.getPositionOffset();
+        if(relativeArmPosition < 0){
+            relativeArmPosition = 1 + relativeArmPosition;
+        }
+
+        if(relativeArmPosition > 0.9){
+            relativeArmPosition = 0;
+        }
+
+        return relativeArmPosition;
+    }
+
 
     // STATE CONTROLS --------------------------------------------------->
     public ArmState getArmState(){
@@ -125,10 +207,11 @@ public class Arm extends Subsystem{
         SmartDashboard.putNumber("Arm Output", leftLeader.getMotorOutputPercent() * 100);
         SmartDashboard.putString("Arm State", currentState.toString());
 
+        SmartDashboard.putNumber("Arm Target Position", targetPosition);
+
         // Encoder
         SmartDashboard.putBoolean("Encoder Connected", armEncoder.isConnected());
-        SmartDashboard.putNumber("Arm Position", armEncoder.getAbsolutePosition());
-        SmartDashboard.putNumber("Arm Distance", armEncoder.getDistance());
-        SmartDashboard.putNumber("Arm Frequency", armEncoder.getFrequency());
+        SmartDashboard.putNumber("Arm Position", getArmPosition());
+        SmartDashboard.putNumber("Arm Error", pidController.getPositionError());
     }
 }
