@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Intake.IntakeState;
 
@@ -18,6 +19,7 @@ public class Robot extends TimedRobot {
     private Drive drive;
     private Intake intake;
     private Arm arm ;
+    private LED led ;
 
     // Controllers
     XboxController controller;
@@ -35,6 +37,7 @@ public class Robot extends TimedRobot {
         arm = Arm.getInstance();
         intake = Intake.getInstance();
         shooter = Shooter.getInstance();
+        led = LED.getInstance();
 
         arm.enableArmBrake();
         drive.enableDriveBrake(); 
@@ -91,6 +94,9 @@ public class Robot extends TimedRobot {
           arm.moveToChainPosition();
         }
 
+        // LEDs
+        led.ledPeriodic();
+
         outputTelemetries();
       }
       catch (Throwable t) {
@@ -123,9 +129,9 @@ public class Robot extends TimedRobot {
         
 
         if(controlBoard.getRawAxis(1) == 1){
-          armVelocity = 1;
+          armVelocity = 0.5;
         } else if(controlBoard.getRawAxis(1)== -1){
-          armVelocity = -1;
+          armVelocity = -0.5;
         }
 
 
@@ -152,15 +158,14 @@ public class Robot extends TimedRobot {
           intake.setIntakeState(IntakeState.OFF);
         } 
 
+        arm.armPeriodic();
+
         // Run Shooter
         if(runShooter){
           shooter.shoot();
         } else {
           shooter.stop();
         }  
-
-        // Diagnostics
-        outputTelemetries();
       }
       catch (Throwable t) {
         throw t;
@@ -172,11 +177,6 @@ public class Robot extends TimedRobot {
 
     @Override
     public void testPeriodic(){
-      arm.armPeriodic();
-     
-
-      // Diagnostics
-      //outputTelemetries();
     }
 
     @Override

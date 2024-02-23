@@ -41,6 +41,8 @@ public class Arm extends Subsystem{
     private double targetPosition;
     private final double minEffectivePower = 0.3;
 
+    private boolean movingToDrive = false;
+
      
 
     public static Arm getInstance() {
@@ -95,25 +97,29 @@ public class Arm extends Subsystem{
     }
 
     public void armPeriodic() {
-        // Check the current arm position and adjust if necessary
-        double currentPosition = getArmPosition(); // Gets the current encoder position
+        if(currentPosition != ArmPosition.DRIVE || movingToDrive){
+            // Check the current arm position and adjust if necessary
+            double currentPosition = getArmPosition(); // Gets the current encoder position
 
-        double pidOutput = pidController.calculate(currentPosition, targetPosition);
+            double pidOutput = pidController.calculate(currentPosition, targetPosition);
 
-            if (Math.abs(pidOutput) > 0 && Math.abs(pidOutput) < minEffectivePower) {
-                // Adjust the pidOutput to at least the minimum effective power
-                pidOutput = Math.copySign(minEffectivePower, pidOutput);
-            }
+                if (Math.abs(pidOutput) > 0 && Math.abs(pidOutput) < minEffectivePower) {
+                    // Adjust the pidOutput to at least the minimum effective power
+                    pidOutput = Math.copySign(minEffectivePower, pidOutput);
+                }
 
-        if (!pidController.atSetpoint()) { // Check if we're at the target position
-            moveArm(pidOutput);
-        } else {
-            moveArm(0);
+            if (!pidController.atSetpoint()) { // Check if we're at the target position
+                moveArm(pidOutput);
+            } else {
+                moveArm(0);
+                movingToDrive = false;
+            }   
         }
     }
 
     public void moveToDrivePosition() {
         moveArmToPosition(Constants.kArmDriveAbsolutePosition);
+        movingToDrive = true;
     }
     
     public void moveToIntakePosition() {
