@@ -1,5 +1,7 @@
 package frc.lib;
 
+import frc.lib.loops.ILooper;
+
 /**
  * The Subsystem abstract class, which serves as a basic framework for all robot subsystems. Each subsystem outputs
  * commands to SmartDashboard, has a stop routine (for after each match), and a routine to zero all sensors, which helps
@@ -20,6 +22,8 @@ public abstract class Subsystem {
     // Optional design pattern for caching periodic writes to avoid hammering the HAL/CAN.
     public void writePeriodicOutputs() {}
 
+    public void registerEnabledLoops(ILooper mEnabledLooper) {}
+
     public void zeroSensors() {}
 
     public abstract void stop();
@@ -35,6 +39,4 @@ public abstract class Subsystem {
 
     // Optional pattern for checking if attached devices have healthy configurations
     public void rewriteDeviceConfiguration() {};
-
-
 }

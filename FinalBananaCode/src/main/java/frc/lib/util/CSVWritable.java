@@ -1,4 +1,4 @@
-package frc.robot.lib.util;
+package frc.lib.util;
 
 public interface CSVWritable {
     String toCSV();
