@@ -12,6 +12,7 @@ import frc.robot.controlboard.ControlBoard;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Intake.IntakeState;
 
@@ -19,6 +20,12 @@ public class Robot extends TimedRobot {
   // Loopers
   private final Looper enabledLooper = new Looper(Constants.kLooperDt);
   private final Looper disabledLooper = new Looper(Constants.kLooperDt);
+    // Subsystems
+    private Shooter shooter;
+    private Drive drive;
+    private Intake intake;
+    private Arm arm ;
+    private LED led ;
 
   // Controllers
   private final ControlBoard controlBoard = ControlBoard.getInstance();
@@ -34,6 +41,14 @@ public class Robot extends TimedRobot {
   private Drive drive;
   private Intake intake;
   private Arm arm ;
+    @Override
+    public void robotInit() {
+      try {
+        drive = Drive.getInstance();
+        arm = Arm.getInstance();
+        intake = Intake.getInstance();
+        shooter = Shooter.getInstance();
+        led = LED.getInstance();
 
   // Controllers
   XboxController controller;
@@ -50,6 +65,55 @@ public class Robot extends TimedRobot {
       intake = Intake.getInstance();
       shooter = Shooter.getInstance();
 
+    @Override
+    public void robotPeriodic(){
+      try {
+        if(joystickLeft.getRawButton(7)){
+          tankDrive = true;
+        } else if(joystickLeft.getRawButton(8)){
+          tankDrive = false;
+        }
+
+        if(joystickLeft.getRawButton(11)){
+          drive.resetHeading();
+        }
+
+        if(joystickLeft.getRawButton(12)){
+          intakeDriveMode = true;
+        } else if(joystickLeft.getRawButton(11)){
+          intakeDriveMode = false;
+        }
+
+
+
+        if(controlBoard.getRawButton(1)){
+          arm.moveToDrivePosition();
+        }
+        if(controlBoard.getRawButton(2)){
+          arm.moveToIntakePosition();
+        }
+        if(controlBoard.getRawButton(3)){
+          arm.moveToSpeakerPosition();
+        }
+        if(controlBoard.getRawButton(4)){
+          arm.moveToAmpPosition();
+        }
+        if(controlBoard.getRawButton(5)){
+          arm.moveToChainPosition();
+        }
+
+        // LEDs
+        led.ledPeriodic();
+
+        outputTelemetries();
+      }
+      catch (Throwable t) {
+        throw t;
+      }
+    }
+
+    @Override 
+    public void teleopInit(){
       arm.enableArmBrake();
       drive.enableDriveBrake(); 
     } catch (Throwable t) {
@@ -62,9 +126,59 @@ public class Robot extends TimedRobot {
     joystickRight = new Joystick(1);
     controlBoard = new Joystick(3);
 
-    //Start camera server
-    if(Constants.kEnableCameraServer){
-      CameraServer.startAutomaticCapture();
+
+        // Arm Inputs
+        double armVelocity = controller.getRawAxis(2) - controller.getRawAxis(3);
+        Boolean runIntake = controller.getRawButton(5) || joystickLeft.getRawButton(1);
+        Boolean runShooter = controller.getRawButton(6)  || joystickRight.getRawButton(1);
+        Boolean runIntakeBack = controller.getYButton() || joystickLeft.getRawButton(4);
+        
+        // Run subsystems
+        drive.tankDrive(leftDrive, rightDrive);
+        
+
+        if(controlBoard.getRawAxis(1) == 1){
+          armVelocity = 0.5;
+        } else if(controlBoard.getRawAxis(1)== -1){
+          armVelocity = -0.5;
+        }
+
+
+        if(joystickLeft.getPOV() == 0){
+          armVelocity = 0.75;
+        } else if(joystickLeft.getPOV() == 180){
+          armVelocity = -0.75;
+        }
+
+        if(joystickRight.getPOV() == 0){
+          armVelocity = 0.5;
+        } else if(joystickRight.getPOV() == 180){
+          armVelocity = -0.5;
+        }
+
+        arm.moveArm(armVelocity);
+
+        // Run Intake
+        if(runIntake){
+          intake.setIntakeState(IntakeState.INTAKING);
+        } else if (runIntakeBack){
+          intake.setIntakeState(IntakeState.EJECTING);
+        } else {
+          intake.setIntakeState(IntakeState.OFF);
+        } 
+
+        arm.armPeriodic();
+
+        // Run Shooter
+        if(runShooter){
+          shooter.shoot();
+        } else {
+          shooter.stop();
+        }  
+      }
+      catch (Throwable t) {
+        throw t;
+      }
     }
   }
 
@@ -154,8 +268,8 @@ public class Robot extends TimedRobot {
         shooter.stop();
       }  
 
-      // Diagnostics
-      outputTelemetries();
+    @Override
+    public void testPeriodic(){
     }
     catch (Throwable t) {
       throw t;
