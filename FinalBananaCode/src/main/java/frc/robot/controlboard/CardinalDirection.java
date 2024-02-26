@@ -1,6 +1,6 @@
 package frc.robot.controlboard;
 
-import  frc.robot.lib.geometry.Rotation2d;
+import  frc.lib.geometry.Rotation2d;
 
 public enum CardinalDirection {
     BACK(180),

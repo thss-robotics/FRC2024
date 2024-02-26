@@ -1,10 +1,10 @@
-package frc.robot.lib.geometry;
+package frc.lib.geometry;
 
-import frc.robot.lib.util.Util;
+import frc.lib.util.Util;
 
 import java.text.DecimalFormat;
 
-import static frc.robot.lib.util.Util.kEpsilon;
+import static frc.lib.util.Util.kEpsilon;
 
 /**
  * A rotation in a 2d coordinate frame represented a point on the unit circle

@@ -1,7 +1,7 @@
 package frc.robot.controlboard;
 
 import frc.robot.Constants;
-import frc.robot.lib.util.Util;
+import frc.lib.util.Util;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.Joystick;
 

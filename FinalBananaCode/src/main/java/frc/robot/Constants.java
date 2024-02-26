@@ -1,6 +1,9 @@
 package frc.robot;
 
 public class Constants {
+    public static final double kLooperDt = 0.01;
+    public static final double kEpsilon = 1E-3;
+
     // CAN
     public static int kFrontLeftDriveId = 1;
     public static int kFrontRightDriveId = 2;
@@ -19,6 +22,9 @@ public class Constants {
     // Devices
     public static Boolean kEnableCameraServer = true;
 
+    // Config
+    public static Double kRecheckDeviceIntervalSeconds = 10.0;
+    
     // Arm Positions
     public static final double kArmDriveAbsolutePosition = 0.156;
     public static final double kArmIntakeAbsolutePosition = 0.003;

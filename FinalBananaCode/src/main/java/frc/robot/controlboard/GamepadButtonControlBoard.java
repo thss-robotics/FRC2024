@@ -2,7 +2,7 @@ package frc.robot.controlboard;
 
 import frc.robot.Constants;
 import frc.robot.controlboard.XboxController.Button;
-import frc.robot.lib.util.Util;
+import frc.lib.util.Util;
 
 public class GamepadButtonControlBoard implements IButtonControlBoard {
     private static GamepadButtonControlBoard mInstance = null;

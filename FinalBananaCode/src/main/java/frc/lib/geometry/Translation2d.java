@@ -1,6 +1,6 @@
-package frc.robot.lib.geometry;
+package frc.lib.geometry;
 
-import frc.robot.lib.util.Util;
+import frc.lib.util.Util;
 
 import java.text.DecimalFormat;
 

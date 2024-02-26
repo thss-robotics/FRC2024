@@ -1,6 +1,7 @@
 package frc.robot; 
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.subsystems.Arm;
@@ -13,6 +14,9 @@ import frc.robot.subsystems.Intake.IntakeState;
 import frc.robot.subsystems.Superstructure.RobotState;
 
 public class Robot extends TimedRobot {
+  // Loopers
+  private final Looper enabledLooper = new Looper(Constants.kLooperDt);
+  private final Looper disabledLooper = new Looper(Constants.kLooperDt);
     // Subsystems
     private Superstructure superstructure;
     private Drive drive;
@@ -21,15 +25,17 @@ public class Robot extends TimedRobot {
     private Intake intake;
     private LED led ;
 
-    // Controllers
-    XboxController controller;
-    Joystick controlBoard;
-    Joystick joystickLeft;
-    Joystick joystickRight;
+  // Controllers
+  private final ControlBoard controlBoard = ControlBoard.getInstance();
 
     // States
     Boolean systemsHealthy;
 
+  // Subsystems
+  private Shooter shooter;
+  private Drive drive;
+  private Intake intake;
+  private Arm arm ;
     @Override
     public void robotInit() {
       try {
@@ -182,9 +188,93 @@ public class Robot extends TimedRobot {
         throw t;
       }
     }
+  }
 
-    @Override 
-    public void testInit(){}
+  @Override
+  public void robotPeriodic(){
+    try {
+      if(joystickLeft.getRawButton(7)){
+        tankDrive = true;
+      } else if(joystickLeft.getRawButton(8)){
+        tankDrive = false;
+      }
+
+      if(joystickLeft.getRawButton(11)){
+        drive.resetHeading();
+      }
+
+      if(joystickLeft.getRawButton(12)){
+        intakeDriveMode = true;
+      } else if(joystickLeft.getRawButton(11)){
+        intakeDriveMode = false;
+      }
+
+    }
+    catch (Throwable t) {
+      throw t;
+    }
+  }
+
+  @Override 
+  public void teleopInit(){
+    arm.enableArmBrake();
+  }
+
+  @Override
+  public void teleopPeriodic(){
+    try {
+      // Drive Inputs
+      double leftDrive = controller.getRawAxis(1) + (intakeDriveMode ? joystickLeft.getY() : -joystickRight.getY());
+      double rightDrive = -controller.getRawAxis(5) + (intakeDriveMode ? -joystickRight.getY() : joystickLeft.getY());
+      double turn = controller.getRawAxis(1) + joystickLeft.getX();
+
+
+      // Arm Inputs
+      double armVelocity = controller.getRawAxis(2) - controller.getRawAxis(3);
+      Boolean runIntake = controller.getRawButton(5) || joystickLeft.getRawButton(1);
+      Boolean runShooter = controller.getRawButton(6)  || joystickRight.getRawButton(1);
+      Boolean runIntakeBack = controller.getYButton() || joystickLeft.getRawButton(4);
+      
+      // Run subsystems
+      drive.tankDrive(leftDrive, rightDrive);
+      
+
+      if(controlBoard.getRawAxis(1) == 1){
+        armVelocity = 1;
+      } else if(controlBoard.getRawAxis(1)== -1){
+        armVelocity = -1;
+      }
+
+
+      if(joystickLeft.getPOV() == 0){
+        armVelocity = 0.75;
+      } else if(joystickLeft.getPOV() == 180){
+        armVelocity = -0.75;
+      }
+
+      if(joystickRight.getPOV() == 0){
+        armVelocity = 0.5;
+      } else if(joystickRight.getPOV() == 180){
+        armVelocity = -0.5;
+      }
+
+      arm.moveArm(armVelocity);
+
+      // Run Intake
+      if(runIntake){
+        intake.setIntakeState(IntakeState.INTAKING);
+      } else if (runIntakeBack){
+        intake.setIntakeState(IntakeState.EJECTING);
+      } else {
+        intake.setIntakeState(IntakeState.OFF);
+      } 
+
+      // Run Shooter
+      if(runShooter){
+        shooter.shoot();
+      } else {
+        shooter.stop();
+      }  
 
     @Override
     public void testPeriodic(){}
@@ -198,6 +288,7 @@ public class Robot extends TimedRobot {
       arm.enableArmBrake();
       drive.disableDriveBrake();
     }
+  }
 
     @Override
     public void disabledPeriodic() {
