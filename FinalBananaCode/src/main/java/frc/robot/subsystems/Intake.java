@@ -3,11 +3,15 @@ package frc.robot.subsystems;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.Subsystem;
 
 public class Intake extends Subsystem {
     private static Intake instance = null;
+
+    // Intake Sensor
+    DigitalInput intakeSensor = new DigitalInput(9);
 
     // Motors
     private CANSparkMax intakeMotor;
@@ -34,7 +38,7 @@ public class Intake extends Subsystem {
     private Intake() {
         // Attach motors
         intakeMotor = new CANSparkMax(7, MotorType.kBrushless);
-        intakeMotor.setSmartCurrentLimit(50);
+        intakeMotor.setSmartCurrentLimit(60);
     }
 
     public void setIntakeState(IntakeState newState) {
@@ -73,7 +77,7 @@ public class Intake extends Subsystem {
 
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
-        SmartDashboard.putBoolean("Is Intaking", intakeRunning);
+        SmartDashboard.putBoolean("Is Intaking", intakeSensor.get());
         SmartDashboard.putNumber("Intake Speed", intakeMotor.get() * 100);
         SmartDashboard.putNumber("Intake Current", intakeMotor.getOutputCurrent());
         SmartDashboard.putNumber("Intake Speed", INTAKE_SPEED);

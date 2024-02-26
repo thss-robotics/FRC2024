@@ -1,24 +1,24 @@
 package frc.robot; 
 
-import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Intake.IntakeState;
+import frc.robot.subsystems.Superstructure.RobotState;
 
 public class Robot extends TimedRobot {
     // Subsystems
-    private Shooter shooter;
+    private Superstructure superstructure;
     private Drive drive;
-    private Intake intake;
     private Arm arm ;
+    private Shooter shooter;
+    private Intake intake;
     private LED led ;
 
     // Controllers
@@ -27,8 +27,8 @@ public class Robot extends TimedRobot {
     Joystick joystickLeft;
     Joystick joystickRight;
 
-    private Boolean tankDrive = true;
-    private Boolean intakeDriveMode = false;
+    // States
+    Boolean systemsHealthy;
 
     @Override
     public void robotInit() {
@@ -38,65 +38,63 @@ public class Robot extends TimedRobot {
         intake = Intake.getInstance();
         shooter = Shooter.getInstance();
         led = LED.getInstance();
+        superstructure = Superstructure.getInstance();
 
+        // Enable brakes
         arm.enableArmBrake();
         drive.enableDriveBrake(); 
+
+        // Set up controller or joystick 
+        controller = new XboxController(0);
+        joystickLeft = new Joystick(2);
+        joystickRight = new Joystick(1);
+        controlBoard = new Joystick(3);
+
+        // Check health
+        systemsHealthy = checkSystems();
+        led.setState(led.new HealthNotifyState(systemsHealthy));
+
       } catch (Throwable t) {
         throw t;
-      }
-
-      // Set up controller or joystick 
-      controller = new XboxController(0);
-      joystickLeft = new Joystick(2);
-      joystickRight = new Joystick(1);
-      controlBoard = new Joystick(3);
-
-      //Start camera server
-      if(Constants.kEnableCameraServer){
-        CameraServer.startAutomaticCapture();
       }
     }
 
     @Override
     public void robotPeriodic(){
       try {
-        if(joystickLeft.getRawButton(7)){
-          tankDrive = true;
-        } else if(joystickLeft.getRawButton(8)){
-          tankDrive = false;
-        }
-
+        // Reset NavX
         if(joystickLeft.getRawButton(11)){
           drive.resetHeading();
         }
 
-        if(joystickLeft.getRawButton(12)){
-          intakeDriveMode = true;
-        } else if(joystickLeft.getRawButton(11)){
-          intakeDriveMode = false;
-        }
-
-
-
+        // Set robot states
         if(controlBoard.getRawButton(1)){
-          arm.moveToDrivePosition();
+          superstructure.setState(RobotState.DRIVE);
         }
         if(controlBoard.getRawButton(2)){
-          arm.moveToIntakePosition();
+          superstructure.setState(RobotState.INTAKE);
         }
         if(controlBoard.getRawButton(3)){
-          arm.moveToSpeakerPosition();
+          superstructure.setState(RobotState.SPEAKER);
         }
         if(controlBoard.getRawButton(4)){
-          arm.moveToAmpPosition();
+          superstructure.setState(RobotState.AMP);
         }
         if(controlBoard.getRawButton(5)){
-          arm.moveToChainPosition();
+           superstructure.setState(RobotState.CHAIN);
         }
+
+        if(controlBoard.getRawButton(11)){
+          systemsHealthy = checkSystems();
+          led.setState(led.new HealthNotifyState(systemsHealthy));
+        }
+
+        
 
         // LEDs
         led.ledPeriodic();
 
+        // Telemetry
         outputTelemetries();
       }
       catch (Throwable t) {
@@ -105,35 +103,41 @@ public class Robot extends TimedRobot {
     }
 
     @Override 
+    public void autonomousInit(){
+    }
+
+    @Override 
+    public void autonomousPeriodic(){
+      led.setState(led.new AutonomousState());
+    }
+
+    @Override 
     public void teleopInit(){
-      arm.enableArmBrake();
+      drive.enableDriveBrake();
     }
 
     @Override
     public void teleopPeriodic(){
       try {
         // Drive Inputs
-        double leftDrive = controller.getRawAxis(1) + (intakeDriveMode ? joystickLeft.getY() : -joystickRight.getY());
-        double rightDrive = -controller.getRawAxis(5) + (intakeDriveMode ? -joystickRight.getY() : joystickLeft.getY());
-        double turn = controller.getRawAxis(1) + joystickLeft.getX();
-
+        double leftDrive = controller.getRawAxis(1) + -joystickRight.getY(); 
+        double rightDrive = -controller.getRawAxis(5) + joystickLeft.getY();
 
         // Arm Inputs
         double armVelocity = controller.getRawAxis(2) - controller.getRawAxis(3);
         Boolean runIntake = controller.getRawButton(5) || joystickLeft.getRawButton(1);
         Boolean runShooter = controller.getRawButton(6)  || joystickRight.getRawButton(1);
-        Boolean runIntakeBack = controller.getYButton() || joystickLeft.getRawButton(4);
+        Boolean runIntakeBack = controller.getYButton() || joystickLeft.getRawButton(4) || controlBoard.getRawButton(6);
         
         // Run subsystems
         drive.tankDrive(leftDrive, rightDrive);
         
-
+        // Arm Overrides
         if(controlBoard.getRawAxis(1) == 1){
           armVelocity = 0.5;
         } else if(controlBoard.getRawAxis(1)== -1){
           armVelocity = -0.5;
         }
-
 
         if(joystickLeft.getPOV() == 0){
           armVelocity = 0.75;
@@ -147,7 +151,13 @@ public class Robot extends TimedRobot {
           armVelocity = -0.5;
         }
 
-        arm.moveArm(armVelocity);
+        // Run Arm
+        if(!controlBoard.getRawButton(12)){
+          arm.armPeriodic(armVelocity);
+        } else {
+          arm.moveArm(0);
+          arm.stop();
+        }
 
         // Run Intake
         if(runIntake){
@@ -158,14 +168,15 @@ public class Robot extends TimedRobot {
           intake.setIntakeState(IntakeState.OFF);
         } 
 
-        arm.armPeriodic();
-
         // Run Shooter
         if(runShooter){
           shooter.shoot();
         } else {
           shooter.stop();
         }  
+
+        // LEDs
+        led.setState(led.new TeleopState());
       }
       catch (Throwable t) {
         throw t;
@@ -176,20 +187,25 @@ public class Robot extends TimedRobot {
     public void testInit(){}
 
     @Override
-    public void testPeriodic(){
-    }
+    public void testPeriodic(){}
 
     @Override
     public void disabledInit() {
-      arm.enableArmBrake();
-      drive.disableDriveBrake();
+      arm.stop();
       intake.stop();
       shooter.stop();
+     
+      arm.enableArmBrake();
+      drive.disableDriveBrake();
     }
 
     @Override
     public void disabledPeriodic() {
+      led.setState(led.new DisabledState());
     }
+
+
+    // CUSTOM METHODS
 
     public void outputTelemetries(){
       drive.outputTelemetry(isDisabled());
@@ -198,12 +214,12 @@ public class Robot extends TimedRobot {
       intake.outputTelemetry(isDisabled());
     }
 
-    public void checkSystems(){
-      SmartDashboard.putBoolean("Systems Are Healthy", (
+    public Boolean checkSystems(){
+      return (
         drive.checkSystem() ||
         arm.checkSystem() ||
         shooter.checkSystem() ||
         intake.checkSystem() 
-      ));
+      );
     }
 }

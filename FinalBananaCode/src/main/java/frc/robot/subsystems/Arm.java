@@ -72,7 +72,7 @@ public class Arm extends Subsystem{
         currentPosition = ArmPosition.DRIVE;
 
         // PID 
-        pidController = new PIDController(6, 0.2, 0.2);
+        pidController = new PIDController(7.5, 0.2, 0.2);
         pidController.setTolerance(0.005);
         pidController.setIntegratorRange(-0.4, 0.4);
     }
@@ -80,12 +80,12 @@ public class Arm extends Subsystem{
     // Move at velocity from -1 to 1  
     public void moveArm(double velocity){
         if (currentState != ArmState.DISABLED) {
-            if(velocity > 0.7){
+            /*if(velocity > 0.7){
                 velocity = 0.7;
             }
             if(velocity < -0.7){
                 velocity = -0.7;
-            }
+            }*/
             velocity = armFilter.calculate(velocity);
             leftLeader.set(ControlMode.PercentOutput, velocity);
             currentState = ArmState.MOVING;
@@ -96,7 +96,9 @@ public class Arm extends Subsystem{
         targetPosition = absolutePosition;
     }
 
-    public void armPeriodic() {
+    public void armPeriodic(double velocity) {
+        SmartDashboard.putString("Arm current Position", currentPosition.toString());
+        SmartDashboard.putBoolean("Arm moving to drive", movingToDrive);
         if(currentPosition != ArmPosition.DRIVE || movingToDrive){
             // Check the current arm position and adjust if necessary
             double currentPosition = getArmPosition(); // Gets the current encoder position
@@ -115,27 +117,36 @@ public class Arm extends Subsystem{
                 movingToDrive = false;
             }   
         }
+        else {
+            moveArm(velocity);
+            movingToDrive = false;
+        }   
     }
 
     public void moveToDrivePosition() {
         moveArmToPosition(Constants.kArmDriveAbsolutePosition);
+        currentPosition = ArmPosition.DRIVE;
         movingToDrive = true;
     }
     
     public void moveToIntakePosition() {
         moveArmToPosition(Constants.kArmIntakeAbsolutePosition);
+        currentPosition = ArmPosition.INTAKE;
     }
     
     public void moveToSpeakerPosition() {
         moveArmToPosition(Constants.kArmSpeakerAbsolutePosition);
+        currentPosition = ArmPosition.SPEAKER;
     }
     
     public void moveToAmpPosition() {
         moveArmToPosition(Constants.kArmAmpAbsolutePosition);
+        currentPosition = ArmPosition.AMP;
     }
     
     public void moveToChainPosition() {
         moveArmToPosition(Constants.kArmChainAbsolutePosition);
+        currentPosition = ArmPosition.CHAIN;
     }
     
     
@@ -212,6 +223,7 @@ public class Arm extends Subsystem{
         SmartDashboard.putBoolean("Arm Brakes", brakeMode);
         SmartDashboard.putNumber("Arm Output", leftLeader.getMotorOutputPercent() * 100);
         SmartDashboard.putString("Arm State", currentState.toString());
+        
 
         SmartDashboard.putNumber("Arm Target Position", targetPosition);
 

@@ -39,6 +39,7 @@ public class Drive extends Subsystem {
     // States
     private double speedLimit = 1;
     private Boolean brakeMode = true;
+    private Boolean reverseForwardsDirection = false;
 
 
     public static Drive getInstance() {
@@ -69,27 +70,6 @@ public class Drive extends Subsystem {
         navX.reset();
     }
 
-    public void arcadeDrive(double speed, double turn) {
-        // Apply speed limits
-        speed *= speedLimit;
-        turn *= speedLimit;
-
-        // Gyro-based auto-correction
-        if (Math.abs(turn) < 0.05) { // Assuming no intentional turn is being requested
-            double headingError = getHeadingError();
-            turn += headingError * kTurnCorrection;
-        }
-     
-        // Apply filter
-        if(enableFilter){
-          speed = filterLeft.calculate(speed);
-          turn = filterTurn.calculate(turn);
-        }
-
-        // Drive
-        driveSystem.arcadeDrive(speed, turn, true);
-    }
-
     public void tankDrive(double leftDrive, double rightDrive) {
         // Apply speed limits
         leftDrive *= speedLimit;
@@ -100,10 +80,32 @@ public class Drive extends Subsystem {
           rightDrive = filterRight.calculate(rightDrive);
         }
 
-        SmartDashboard.putNumber("Left  Output", leftDrive * 100);
-        SmartDashboard.putNumber("Right Output", rightDrive * 100);
-
         driveSystem.tankDrive(leftDrive, rightDrive, true);
+    }
+
+    public void setDriveMode() {
+        setSpeedLimit(1.0); 
+        reverseForwardsDirection = false;
+    }
+
+    public void setIntakeMode() {
+        setSpeedLimit(0.75); 
+        reverseForwardsDirection = true;
+    }
+
+    public void setSpeakerMode() {
+        setSpeedLimit(0.6); 
+        reverseForwardsDirection = false;
+    }
+
+    public void setAmpMode() {
+        setSpeedLimit(0.6); 
+        reverseForwardsDirection = false;
+    }
+
+    public void setChainMode() {
+        setSpeedLimit(0.75);
+        reverseForwardsDirection = true;
     }
 
 

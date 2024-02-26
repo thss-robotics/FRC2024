@@ -1,26 +1,31 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.InvertType;
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
-import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import edu.wpi.first.wpilibj.Timer;
 import frc.lib.Subsystem;
-import frc.robot.subsystems.Arm.ArmPosition;
-import frc.robot.subsystems.Arm.ArmState;
 
 public class LED extends Subsystem {
     private static LED instance = null;
 
-    AddressableLED ledStrip1;
-    AddressableLED ledStrip2;
-    AddressableLED ledStrip3;
-    AddressableLED ledStrip4;
+    private AddressableLED leds;
+    private AddressableLEDBuffer ledBuffer;
+    private LEDState currentState;
+    private final int totalLength;
 
-    AddressableLEDBuffer ledBuffer;
-    int m_rainbowFirstPixelHue = 2;
+    private int rainbowFirstPixelHue = 2;
+
+    // Define sections of the LED strip
+    private enum Section {
+        ARM, BODY, UNDER
+    }
+
+    // State interface
+    private interface LEDState {
+        void enter();
+        void execute();
+        void exit();
+    }
 
     public static LED getInstance() {
         if (instance == null) {
@@ -30,84 +35,170 @@ public class LED extends Subsystem {
     }
 
     private LED() {
-        // Attach RGB strips
-        ledStrip1 = new AddressableLED(0);
-        ledStrip2 = new AddressableLED(1);
-        ledStrip3 = new AddressableLED(2);
-        ledStrip4 = new AddressableLED(3);
-
-        ledBuffer = new AddressableLEDBuffer(60);
-
-        ledStrip1.setLength(ledBuffer.getLength());
-        ledStrip2.setLength(ledBuffer.getLength());
-        ledStrip3.setLength(ledBuffer.getLength());
-        ledStrip4.setLength(ledBuffer.getLength());
-
-
-        // Set the data
-        ledStrip1.setData(ledBuffer);
-        ledStrip2.setData(ledBuffer);
-        ledStrip3.setData(ledBuffer);
-        ledStrip4.setData(ledBuffer);
-
-        ledStrip1.start();
-        ledStrip2.start();
-        ledStrip3.start();
-        ledStrip4.start();
+        leds = new AddressableLED(5); // Single PWM port for all LEDs
+        totalLength = calculateTotalLength();
+        ledBuffer = new AddressableLEDBuffer(totalLength);
+        leds.setLength(ledBuffer.getLength());
+        leds.setData(ledBuffer);
+        leds.start();
+        currentState = new OffState(); // Initial state
     }
 
     public void ledPeriodic() {
-        rainbow();
-
-        ledStrip1.setData(ledBuffer);
-        ledStrip2.setData(ledBuffer);
-        ledStrip3.setData(ledBuffer);
-        ledStrip4.setData(ledBuffer);
+        currentState.execute();
+        leds.setData(ledBuffer);
     }
 
-    private void rainbow() {
-
-    // For every pixel
-
-    for (var i = 0; i < ledBuffer.getLength(); i++) {
-
-        // Calculate the hue - hue is easier for rainbows because the color
-
-        // shape is a circle so only one value needs to precess
-
-        final var hue = (m_rainbowFirstPixelHue + (i * 180 / ledBuffer.getLength())) % 180;
-
-        // Set the value
-
-        ledBuffer.setHSV(i, hue, 255, 128);
-
+    public void setState(LEDState newState) {
+        if (currentState != null) {
+            currentState.exit();
+        }
+        currentState = newState;
+        if (currentState != null) {
+            currentState.enter();
+        }
     }
 
-    // Increase by to make the rainbow "move"
+    // State implementations
+    private class OffState implements LEDState {
+        @Override
+        public void enter() {
+            setAllLEDsColor(0, 0, 0);
+        }
 
-    m_rainbowFirstPixelHue += 3;
+        @Override
+        public void execute() {
+            // Nothing to do here
+        }
 
-    // Check bounds
+        @Override
+        public void exit() {
+            // Cleanup if needed
+        }
+    }
 
-    m_rainbowFirstPixelHue %= 180;
+    public class HealthNotifyState implements LEDState {
+        private boolean systemsHealthy;
+        private double lastBlinkTime;
+        private int blinkCount;
 
+        public HealthNotifyState(boolean systemsHealthy) {
+            this.systemsHealthy = systemsHealthy;
+        }
+
+        @Override
+        public void enter() {
+            blinkCount = 0;
+            lastBlinkTime = Timer.getFPGATimestamp();
+        }
+
+        @Override
+        public void execute() {
+            double currentTime = Timer.getFPGATimestamp();
+            if (currentTime - lastBlinkTime >= 0.25) {
+                if (blinkCount % 2 == 0) {
+                    setAllLEDsColor(systemsHealthy ? 60 : 0, 255, 128); // Green or Red
+                } else {
+                    setAllLEDsColor(0, 0, 0); // Off
+                }
+                blinkCount++;
+                lastBlinkTime = currentTime;
+                if (blinkCount >= 4) {
+                    LED.this.setState(new OffState()); // Switch back to off state after blinking
+                }
+            }
+        }
+
+        @Override
+        public void exit() {
+            setAllLEDsColor(0, 0, 0); // Ensure LEDs are turned off when exiting state
+        }
+    }
+
+    // TeleopState: Greenish hues animation
+    public class TeleopState implements LEDState {
+        @Override
+        public void enter() {}
+
+        @Override
+        public void execute() {
+            // Simple greenish hues animation
+            for (int i = 0; i < ledBuffer.getLength(); i++) {
+                int hue = 85 + (i % 20); // Hues around green
+                ledBuffer.setHSV(i, hue, 255, 128);
+            }
+        }
+
+        @Override
+        public void exit() {}
+    }
+
+    // AutonomousState: Blue/Purple hue animation
+    public class AutonomousState implements LEDState {
+        @Override
+        public void enter() {}
+
+        @Override
+        public void execute() {
+            // Simple blue to purple animation
+            for (int i = 0; i < ledBuffer.getLength(); i++) {
+                int hue = 180 + (i % 45); // Hues from blue to purple
+                ledBuffer.setHSV(i, hue, 255, 128);
+            }
+        }
+
+        @Override
+        public void exit() {}
+    }
+
+    // DisabledState: Maintain the rainbow animation
+    public class DisabledState implements LEDState {
+        @Override
+        public void enter() {}
+
+        @Override
+        public void execute() {
+            // Rainbow effect
+            for (var i = 0; i < ledBuffer.getLength(); i++) {
+                final var hue = (rainbowFirstPixelHue + (i * 180 / ledBuffer.getLength())) % 180;
+                ledBuffer.setHSV(i, hue, 255, 128);
+            }
+            rainbowFirstPixelHue += 3;
+            rainbowFirstPixelHue %= 180;
+        }
+
+        @Override
+        public void exit() {}
+    }
+
+
+    private void setAllLEDsColor(int hue, int saturation, int value) {
+        for (int i = 0; i < ledBuffer.getLength(); i++) {
+            ledBuffer.setHSV(i, hue, saturation, value);
+        }
+    }
+
+    private int calculateTotalLength() {
+        // Calculate the total length of the LED strip based on sections
+        int armLength = 10;
+        int bodyLength = 14 * 2;
+        int underLength = 61;
+        return armLength + bodyLength + underLength;
     }
 
     @Override
     public void stop() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'stop'");
+        // Implement method to stop LED animations or turn off LEDs
     }
 
     @Override
     public boolean checkSystem() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'checkSystem'");
+        // Implement method to check LED system health, if necessary
+        return true;
     }
 
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'outputTelemetry'");
+        // Implement method to output LED-related telemetry, if necessary
     }
 }
