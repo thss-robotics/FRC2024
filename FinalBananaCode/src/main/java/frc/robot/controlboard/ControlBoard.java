@@ -15,147 +15,147 @@ public class ControlBoard implements IDriveControlBoard, IButtonControlBoard {
         return mInstance;
     }
 
-    private final IDriveControlBoard mDriveControlBoard;
-    private final IButtonControlBoard mButtonControlBoard;
+    private final IDriveControlBoard driveControlBoard;
+    private final IButtonControlBoard buttonControlBoard;
 
     private ControlBoard() {
         boolean useDriveGamepad = Constants.kForceDriveGamepad ||
                 DriverStation.getJoystickIsXbox(Constants.kDriveGamepadPort);
-        mDriveControlBoard = useDriveGamepad ? GamepadDriveControlBoard.getInstance()
+        driveControlBoard = useDriveGamepad ? GamepadDriveControlBoard.getInstance()
                 : MainDriveControlBoard.getInstance();
-        mButtonControlBoard = GamepadButtonControlBoard.getInstance();
+        buttonControlBoard = GamepadButtonControlBoard.getInstance();
     }
 
     @Override
     public double getThrottle() {
-        return mDriveControlBoard.getThrottle();
+        return driveControlBoard.getThrottle();
     }
 
     @Override
     public double getStrafe() {
-        return mDriveControlBoard.getStrafe();
+        return driveControlBoard.getStrafe();
     }
 
     @Override
     public double getRotation() {
-        return mDriveControlBoard.getRotation();
+        return driveControlBoard.getRotation();
     }
 
     @Override
     public boolean resetGyro() {
-        return mDriveControlBoard.resetGyro();
+        return driveControlBoard.resetGyro();
     }
 
     @Override
     public boolean getTestButton() {
-        return mButtonControlBoard.getTestButton();
+        return buttonControlBoard.getTestButton();
     }
 
     @Override
     public boolean getSwitchDriveMode() {
-        return mDriveControlBoard.getSwitchDriveMode();
+        return driveControlBoard.getSwitchDriveMode();
     }
 
     @Override
     public boolean getScoreHigh() {
-        return mButtonControlBoard.getScoreHigh();
+        return buttonControlBoard.getScoreHigh();
     }
 
     @Override
     public boolean getScoreMedium() {
-        return mButtonControlBoard.getScoreMedium();
+        return buttonControlBoard.getScoreMedium();
     }
 
     @Override
     public boolean getScoreLow() {
-        return mButtonControlBoard.getScoreLow();
+        return buttonControlBoard.getScoreLow();
     }
 
     @Override
     public boolean primeLowFling() {
-        return mButtonControlBoard.primeLowFling();
+        return buttonControlBoard.primeLowFling();
     }
 
     @Override
     public boolean primeHighFling() {
-        return mButtonControlBoard.primeHighFling();
+        return buttonControlBoard.primeHighFling();
     }
 
     @Override
     public boolean getScoreMid() {
-        return mButtonControlBoard.getScoreMid();
+        return buttonControlBoard.getScoreMid();
     }
 
     @Override
     public boolean getPickupFeederCone() {
-        return mButtonControlBoard.getPickupFeederCone();
+        return buttonControlBoard.getPickupFeederCone();
     }
 
     @Override
     public boolean getPickupGroundCone() {
-        return mButtonControlBoard.getPickupGroundCone();
+        return buttonControlBoard.getPickupGroundCone();
     }
 
     @Override
     public boolean getPickupFeederCube() {
-        return mButtonControlBoard.getPickupFeederCube();
+        return buttonControlBoard.getPickupFeederCube();
     }
 
     @Override
     public boolean getPickupGroundCube() {
-        return mButtonControlBoard.getPickupGroundCube();
+        return buttonControlBoard.getPickupGroundCube();
     }
 
     @Override
     public boolean getScore() {
-        return mDriveControlBoard.getScore();
+        return driveControlBoard.getScore();
     }
 
     @Override
     public boolean getStow() {
-        return mButtonControlBoard.getStow();
+        return buttonControlBoard.getStow();
     }
 
     @Override
     public boolean getOpenClaw() {
-        return mButtonControlBoard.getOpenClaw();
+        return buttonControlBoard.getOpenClaw();
     }
 
     @Override
     public boolean getCloseClaw() {
-        return mButtonControlBoard.getCloseClaw();
+        return buttonControlBoard.getCloseClaw();
     }
 
     @Override
     public boolean getAutoAlign() {
-        return mDriveControlBoard.getAutoAlign();
+        return driveControlBoard.getAutoAlign();
     }
 
     @Override
     public boolean getToggleClimbMode() {
-        return mButtonControlBoard.getToggleClimbMode();
+        return buttonControlBoard.getToggleClimbMode();
     }
 
     @Override
     public double getManualForksJog() {
-        return mButtonControlBoard.getManualForksJog();
+        return buttonControlBoard.getManualForksJog();
     }
 
     @Override
     public boolean getForksUp() {
-        return mButtonControlBoard.getForksUp();
+        return buttonControlBoard.getForksUp();
     }
 
     @Override
     public boolean getForksDown() {
-        return mButtonControlBoard.getForksDown();
+        return buttonControlBoard.getForksDown();
     }
 
     @Override
     public boolean getFling() {
-        return mButtonControlBoard.getFling();
+        return buttonControlBoard.getFling();
     }
 
     @Override
-    public boolean getGroundIntakePush() { return mButtonControlBoard.getGroundIntakePush(); }
+    public boolean getGroundIntakePush() { return buttonControlBoard.getGroundIntakePush(); }
 }

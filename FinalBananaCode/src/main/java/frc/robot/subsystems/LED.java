@@ -29,9 +29,6 @@ public class LED extends Subsystem {
 
     AddressableLED led = new AddressableLED(9);
 
-    private SystemState systemState = SystemState.OFF;
-    private WantedAction wantedAction = WantedAction.OFF;
-
     public synchronized static LED getInstance() {
         if (instance == null) {
             instance = new LED();

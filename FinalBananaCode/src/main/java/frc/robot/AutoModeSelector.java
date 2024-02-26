@@ -1,6 +1,5 @@
 package frc.robot;
 
-import frc.robot.auto.modes.*;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
