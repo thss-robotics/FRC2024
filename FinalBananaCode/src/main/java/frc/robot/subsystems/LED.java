@@ -26,9 +26,7 @@ public class LED extends Subsystem {
         void execute();
         void exit();
     }
-
-    AddressableLED led = new AddressableLED(9);
-
+    
     public synchronized static LED getInstance() {
         if (instance == null) {
             instance = new LED();
@@ -37,7 +35,7 @@ public class LED extends Subsystem {
     }
 
     private LED() {
-        leds = new AddressableLED(5); // Single PWM port for all LEDs
+        leds = new AddressableLED(9); // Single PWM port for all LEDs
         totalLength = calculateTotalLength();
         ledBuffer = new AddressableLEDBuffer(totalLength);
         leds.setLength(ledBuffer.getLength());

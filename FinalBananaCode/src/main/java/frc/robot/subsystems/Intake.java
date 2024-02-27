@@ -19,6 +19,7 @@ public class Intake extends Subsystem {
     // States
     public enum IntakeState {
         OFF,
+        AUTO_INTAKING,
         INTAKING,
         EJECTING
     }
@@ -46,10 +47,20 @@ public class Intake extends Subsystem {
         updateMotor();
     }
 
+    public IntakeState getIntakeState() {
+        return currentState;
+    }
+
     private void updateMotor() {
         switch (currentState) {
             case INTAKING:
                 intakeMotor.set(INTAKE_SPEED);
+                break;
+            case AUTO_INTAKING:
+                intakeMotor.set(INTAKE_SPEED);
+                if(!intakeSensor.get()){
+                    setIntakeState(IntakeState.OFF);
+                }
                 break;
             case EJECTING:
                 intakeMotor.set(EJECT_SPEED);

@@ -66,7 +66,7 @@ public class Arm extends Subsystem{
 
         // Set up encoder
         armEncoder = new DutyCycleEncoder(0);
-        armEncoder.setPositionOffset(0.688);
+        armEncoder.setPositionOffset(0.849);
 
         currentState = ArmState.MOVING;
         currentPosition = ArmPosition.DRIVE;
@@ -79,18 +79,24 @@ public class Arm extends Subsystem{
 
     // Move at velocity from -1 to 1  
     public void moveArm(double velocity){
+        double armPosition = getArmPosition();
+    
+        // Check if the arm is lower than 0.1 and moving down
+        if (armPosition < 0.1 && velocity < 0) {
+            // Lower the proportional gain (kP) dynamically
+            pidController.setP(5.0); // Adjust this value according to your requirements
+        } else {
+            // Reset the proportional gain to its default value
+            pidController.setP(7.5); // Default kP value
+        }
+    
         if (currentState != ArmState.DISABLED) {
-            /*if(velocity > 0.7){
-                velocity = 0.7;
-            }
-            if(velocity < -0.7){
-                velocity = -0.7;
-            }*/
             velocity = armFilter.calculate(velocity);
             leftLeader.set(ControlMode.PercentOutput, velocity);
             currentState = ArmState.MOVING;
         }
     }
+    
 
     public void moveArmToPosition(double absolutePosition){
         targetPosition = absolutePosition;

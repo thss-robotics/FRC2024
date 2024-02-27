@@ -6,8 +6,10 @@ import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.Intake.IntakeState;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.VideoSink;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.cscore.UsbCamera;
 
 public class Superstructure {
@@ -22,6 +24,8 @@ public class Superstructure {
     }
 
     private RobotState currentState;
+    private RobotState previousState;
+
     private final Shooter shooter = Shooter.getInstance();
     private final Drive drive = Drive.getInstance();
     private final Intake intake = Intake.getInstance();
@@ -33,6 +37,7 @@ public class Superstructure {
 
     private Superstructure() {
         currentState = RobotState.DRIVE;
+        previousState = RobotState.DRIVE;
         if(Constants.kEnableCameraServer){
             initCameras();
         }
@@ -46,20 +51,31 @@ public class Superstructure {
     }
 
     private void initCameras() {
-        shooterCamera = CameraServer.startAutomaticCapture(1);
-        intakeCamera = CameraServer.startAutomaticCapture(0);
+        shooterCamera = CameraServer.startAutomaticCapture(0);
+        intakeCamera = CameraServer.startAutomaticCapture(1);
         server = CameraServer.getServer();
     }
 
     public void setState(RobotState newState) {
+        previousState = currentState;
         currentState = newState;
+        SmartDashboard.putString("Current State", currentState.toString());
+        SmartDashboard.putString("Prev State", previousState.toString());
         switch (newState) {
             case DRIVE:
                 arm.moveToDrivePosition();
-                server.setSource(shooterCamera);
-                drive.setDriveMode();
+                SmartDashboard.putBoolean("testing", previousState == RobotState.SPEAKER || previousState == RobotState.AMP);
+                if(previousState == RobotState.SPEAKER || previousState == RobotState.AMP){
+                    drive.setDriveMode(true);
+                    server.setSource(intakeCamera);
+                } else {
+                    drive.setDriveMode(false);
+                    server.setSource(shooterCamera);
+                }
+                
                 break;
             case INTAKE:
+                intake.setIntakeState(IntakeState.AUTO_INTAKING);
                 arm.moveToIntakePosition();
                 server.setSource(intakeCamera);
                 drive.setIntakeMode();

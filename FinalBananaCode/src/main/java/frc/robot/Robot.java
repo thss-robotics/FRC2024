@@ -48,6 +48,9 @@ public class Robot extends TimedRobot {
       led = LED.getInstance();
       superstructure = Superstructure.getInstance();
 
+      // Register Autos
+      
+
       // Enable brakes
       arm.enableArmBrake();
       drive.enableDriveBrake(); 
@@ -70,29 +73,31 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic(){
     try {
+      drive.updateOdometry();
+
       // Reset NavX
       if(joystickLeft.getRawButton(11)){
         drive.resetHeading();
       }
 
       // Set robot states
-      if(controlBoard.getRawButton(1)){
+      if(controlBoard.getRawButtonPressed(1)){
         superstructure.setState(RobotState.DRIVE);
       }
-      if(controlBoard.getRawButton(2)){
+      if(controlBoard.getRawButtonPressed(2)){
         superstructure.setState(RobotState.INTAKE);
       }
-      if(controlBoard.getRawButton(3)){
+      if(controlBoard.getRawButtonPressed(3)){
         superstructure.setState(RobotState.SPEAKER);
       }
-      if(controlBoard.getRawButton(4)){
+      if(controlBoard.getRawButtonPressed(4)){
         superstructure.setState(RobotState.AMP);
       }
-      if(controlBoard.getRawButton(5)){
+      if(controlBoard.getRawButtonPressed(5)){
         superstructure.setState(RobotState.CHAIN);
       }
 
-      if(controlBoard.getRawButton(11)){
+      if(controlBoard.getRawButtonPressed(11)){
         systemsHealthy = checkSystems();
         led.setState(led.new HealthNotifyState(systemsHealthy));
       }
@@ -126,8 +131,8 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic(){
     try {
       // Drive Inputs
-      double leftDrive = controller.getRawAxis(1) + -joystickRight.getY(); 
-      double rightDrive = -controller.getRawAxis(5) + joystickLeft.getY();
+      double leftDrive = controller.getRawAxis(1) + joystickLeft.getY(); 
+      double rightDrive = -controller.getRawAxis(5) + -joystickRight.getY();
 
       // Arm Inputs
       double armVelocity = controller.getRawAxis(2) - controller.getRawAxis(3);
@@ -147,8 +152,14 @@ public class Robot extends TimedRobot {
 
       if(joystickLeft.getPOV() == 0){
         armVelocity = 0.75;
+        if(superstructure.getState() == RobotState.CHAIN){
+          armVelocity = 1;
+        }
       } else if(joystickLeft.getPOV() == 180){
         armVelocity = -0.75;
+        if(superstructure.getState() == RobotState.CHAIN){
+          armVelocity = -1;
+        }
       }
 
       if(joystickRight.getPOV() == 0){
@@ -171,6 +182,7 @@ public class Robot extends TimedRobot {
       } else if (runIntakeBack){
         intake.setIntakeState(IntakeState.EJECTING);
       } else {
+        if(intake.getIntakeState() != IntakeState.AUTO_INTAKING)
         intake.setIntakeState(IntakeState.OFF);
       } 
 
