@@ -3,7 +3,9 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.Subsystem;
+import frc.robot.subsystems.LED.DisabledState;
 
 public class LED extends Subsystem {
     private static LED instance = null;
@@ -11,14 +13,11 @@ public class LED extends Subsystem {
     private AddressableLED leds;
     private AddressableLEDBuffer ledBuffer;
     private LEDState currentState;
-    private final int totalLength;
+    private LEDState previousState;
+    private final int armBodyLength = 14; // Arm and Body LEDs in parallel
+    private final int underLength = 61; // Underlighting LEDs
 
-    private int rainbowFirstPixelHue = 2;
-
-    // Define sections of the LED strip
-    private enum Section {
-        ARM, BODY, UNDER
-    }
+    private int rainbowFirstPixelHue = 0;
 
     // State interface
     private interface LEDState {
@@ -26,7 +25,7 @@ public class LED extends Subsystem {
         void execute();
         void exit();
     }
-    
+
     public synchronized static LED getInstance() {
         if (instance == null) {
             instance = new LED();
@@ -36,12 +35,13 @@ public class LED extends Subsystem {
 
     private LED() {
         leds = new AddressableLED(9); // Single PWM port for all LEDs
-        totalLength = calculateTotalLength();
+        int totalLength = armBodyLength + underLength;
         ledBuffer = new AddressableLEDBuffer(totalLength);
         leds.setLength(ledBuffer.getLength());
         leds.setData(ledBuffer);
         leds.start();
         currentState = new OffState(); // Initial state
+        previousState = new OffState();
     }
 
     public void ledPeriodic() {
@@ -53,6 +53,7 @@ public class LED extends Subsystem {
         if (currentState != null) {
             currentState.exit();
         }
+        previousState = currentState;
         currentState = newState;
         if (currentState != null) {
             currentState.enter();
@@ -104,7 +105,7 @@ public class LED extends Subsystem {
                 blinkCount++;
                 lastBlinkTime = currentTime;
                 if (blinkCount >= 4) {
-                    LED.this.setState(new OffState()); // Switch back to off state after blinking
+                    LED.this.setState(previousState); // Switch back to off state after blinking
                 }
             }
         }
@@ -172,33 +173,67 @@ public class LED extends Subsystem {
     }
 
 
+    public class RingIntakeState implements LEDState {
+        private double lastToggleTime;
+        private boolean isPatternVisible = false;
+
+        @Override
+        public void enter() {
+            lastToggleTime = Timer.getFPGATimestamp();
+        }
+
+        @Override
+        public void execute() {
+            double currentTime = Timer.getFPGATimestamp();
+            if (currentTime - lastToggleTime >= 0.5) { // Toggle every 0.5 seconds
+                isPatternVisible = !isPatternVisible;
+                if (isPatternVisible) {
+                    applyPattern();
+                } else {
+                    setAllLEDsColor(0, 0, 0); // Turn off all LEDs
+                }
+                lastToggleTime = currentTime;
+            }
+        }
+
+        @Override
+        public void exit() {
+            setAllLEDsColor(0, 0, 0); // Ensure LEDs are turned off when exiting state
+        }
+
+        private void applyPattern() {
+            // Apply a pattern here, potentially different for arm/body and underlighting
+            for (int i = 0; i < armBodyLength; i++) {
+                ledBuffer.setHSV(i, 100, 255, 128); // Example hue for arm/body
+            }
+            for (int i = armBodyLength; i < ledBuffer.getLength(); i++) {
+                ledBuffer.setHSV(i, 180, 255, 128); // Different hue for underlighting
+            }
+        }
+    }
+
     private void setAllLEDsColor(int hue, int saturation, int value) {
         for (int i = 0; i < ledBuffer.getLength(); i++) {
             ledBuffer.setHSV(i, hue, saturation, value);
         }
     }
 
-    private int calculateTotalLength() {
-        // Calculate the total length of the LED strip based on sections
-        int armLength = 10;
-        int bodyLength = 14 * 2;
-        int underLength = 61;
-        return armLength + bodyLength + underLength;
-    }
-
     @Override
     public void stop() {
-        // Implement method to stop LED animations or turn off LEDs
+        for (int i = 0; i < ledBuffer.getLength(); i++) {
+            ledBuffer.setRGB(i, 0, 0, 0);
+        }
+        leds.setData(ledBuffer);
+        leds.stop();
     }
 
     @Override
     public boolean checkSystem() {
-        // Implement method to check LED system health, if necessary
         return true;
     }
 
     @Override
     public void outputTelemetry(boolean isRobotDisabled) {
-        // Implement method to output LED-related telemetry, if necessary
+        SmartDashboard.putString("LED Current State", currentState.toString());
     }
 }

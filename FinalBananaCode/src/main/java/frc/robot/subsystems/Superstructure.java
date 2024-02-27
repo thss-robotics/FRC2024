@@ -103,7 +103,8 @@ public class Superstructure {
     }
 
     public void execute() {
-        // Place any code here that needs to run in every robot state
         led.ledPeriodic();
+        intake.intakePeriodic();
+        drive.updateOdometry();
     }
 }

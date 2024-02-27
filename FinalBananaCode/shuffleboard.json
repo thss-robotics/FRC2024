@@ -545,22 +545,6 @@
               "_showGlyph": false
             }
           },
-          "6,0": {
-            "size": [
-              2,
-              2
-            ],
-            "content": {
-              "_type": "Simple Dial",
-              "_source0": "network_table:///SmartDashboard/Arm Position",
-              "_title": "ARM ANGLE",
-              "_glyph": 148,
-              "_showGlyph": false,
-              "Range/Min": 0.0,
-              "Range/Max": 0.5,
-              "Visuals/Show value": true
-            }
-          },
           "8,0": {
             "size": [
               1,
@@ -619,6 +603,19 @@
               "_type": "Text View",
               "_source0": "network_table:///SmartDashboard/Gyro Assist Threshhold",
               "_title": "/SmartDashboard/Gyro Assist Threshhold",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
+          },
+          "6,0": {
+            "size": [
+              2,
+              2
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Arm Position",
+              "_title": "SmartDashboard/Arm Position",
               "_glyph": 148,
               "_showGlyph": false
             }
@@ -702,6 +699,21 @@
               "_title": "/SmartDashboard/Right Drive Encoder",
               "_glyph": 148,
               "_showGlyph": false
+            }
+          },
+          "4,0": {
+            "size": [
+              1,
+              1
+            ],
+            "content": {
+              "_type": "Boolean Box",
+              "_source0": "network_table:///SmartDashboard/Arm Limit Switch",
+              "_title": "SmartDashboard/Arm Limit Switch",
+              "_glyph": 148,
+              "_showGlyph": false,
+              "Colors/Color when true": "#7CFC00FF",
+              "Colors/Color when false": "#8B0000FF"
             }
           }
         }

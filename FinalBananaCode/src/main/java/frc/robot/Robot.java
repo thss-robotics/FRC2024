@@ -13,6 +13,7 @@ import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Intake.IntakeState;
+import frc.robot.subsystems.LED.RingIntakeState;
 import frc.robot.subsystems.Superstructure.RobotState;
 
 public class Robot extends TimedRobot {
@@ -48,9 +49,6 @@ public class Robot extends TimedRobot {
       led = LED.getInstance();
       superstructure = Superstructure.getInstance();
 
-      // Register Autos
-      
-
       // Enable brakes
       arm.enableArmBrake();
       drive.enableDriveBrake(); 
@@ -63,6 +61,7 @@ public class Robot extends TimedRobot {
 
       // Check health
       systemsHealthy = checkSystems();
+
       led.setState(led.new HealthNotifyState(systemsHealthy));
 
     } catch (Throwable t) {
@@ -73,7 +72,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic(){
     try {
-      drive.updateOdometry();
+      superstructure.execute();
 
       // Reset NavX
       if(joystickLeft.getRawButton(11)){
@@ -102,9 +101,6 @@ public class Robot extends TimedRobot {
         led.setState(led.new HealthNotifyState(systemsHealthy));
       }
 
-      // LEDs
-      led.ledPeriodic();
-
       // Telemetry
       outputTelemetries();
     }
@@ -115,16 +111,21 @@ public class Robot extends TimedRobot {
 
   @Override 
   public void autonomousInit(){
+    led.setState(led.new AutonomousState());
   }
 
   @Override 
   public void autonomousPeriodic(){
-    led.setState(led.new AutonomousState());
+    
   }
 
   @Override 
   public void teleopInit(){
     drive.enableDriveBrake();
+    arm.setManualMode();
+    drive.setDriveMode(false);
+    intake.setIntakeState(IntakeState.OFF);
+    led.setState(led.new TeleopState());
   }
 
   @Override
@@ -139,15 +140,15 @@ public class Robot extends TimedRobot {
       Boolean runIntake = controller.getRawButton(5) || joystickLeft.getRawButton(1);
       Boolean runShooter = controller.getRawButton(6)  || joystickRight.getRawButton(1);
       Boolean runIntakeBack = controller.getYButton() || joystickLeft.getRawButton(4) || controlBoard.getRawButton(6);
-      
+
       // Run subsystems
       drive.tankDrive(leftDrive, rightDrive);
       
       // Arm Overrides
       if(controlBoard.getRawAxis(1) == 1){
-        armVelocity = 0.5;
-      } else if(controlBoard.getRawAxis(1)== -1){
         armVelocity = -0.5;
+      } else if(controlBoard.getRawAxis(1)== -1){
+        armVelocity = 0.5;
       }
 
       if(joystickLeft.getPOV() == 0){
@@ -172,7 +173,7 @@ public class Robot extends TimedRobot {
       if(!controlBoard.getRawButton(12)){
         arm.armPeriodic(armVelocity);
       } else {
-        arm.moveArm(0);
+        arm.moveArm(0, true);
         arm.stop();
       }
 
@@ -182,7 +183,10 @@ public class Robot extends TimedRobot {
       } else if (runIntakeBack){
         intake.setIntakeState(IntakeState.EJECTING);
       } else {
-        if(intake.getIntakeState() != IntakeState.AUTO_INTAKING)
+      if(intake.getIntakeState() != IntakeState.OFF && 
+        intake.getIntakeState() != IntakeState.AUTO_INTAKING &&
+        intake.getIntakeState() != IntakeState.AUTO_EJECTING
+        )
         intake.setIntakeState(IntakeState.OFF);
       } 
 
@@ -193,17 +197,21 @@ public class Robot extends TimedRobot {
         shooter.stop();
       }  
 
-      // LEDs
-      led.setState(led.new TeleopState());
+      
     }
     catch (Throwable t) {
       throw t;
     }
   }
+  
+  @Override
+  public void disabledInit(){
+    led.setState(led.new DisabledState());
+  }
 
   @Override
   public void disabledPeriodic() {
-    led.setState(led.new DisabledState());
+   
   }
 
 

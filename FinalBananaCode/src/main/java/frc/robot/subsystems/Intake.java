@@ -6,6 +6,8 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.Subsystem;
+import frc.robot.subsystems.LED.RingIntakeState;
+import frc.robot.subsystems.Superstructure.RobotState;
 
 public class Intake extends Subsystem {
     private static Intake instance = null;
@@ -16,9 +18,13 @@ public class Intake extends Subsystem {
     // Motors
     private CANSparkMax intakeMotor;
 
+    // LED
+    private LED led = LED.getInstance();
+
     // States
     public enum IntakeState {
         OFF,
+        AUTO_EJECTING,
         AUTO_INTAKING,
         INTAKING,
         EJECTING
@@ -27,7 +33,9 @@ public class Intake extends Subsystem {
     
     public Boolean intakeRunning = true;
     private static double INTAKE_SPEED = 1.0;
-    private static double EJECT_SPEED = -0.5;
+    private static double EJECT_SPEED = -1.0;
+     private static double AUTO_INTAKE_SPEED = 1.0;
+    private static double AUTO_EJECT_SPEED = -0.5;
 
     public static Intake getInstance() {
         if (instance == null) {
@@ -40,6 +48,10 @@ public class Intake extends Subsystem {
         // Attach motors
         intakeMotor = new CANSparkMax(7, MotorType.kBrushless);
         intakeMotor.setSmartCurrentLimit(60);
+    }
+
+    public void intakePeriodic(){
+        updateMotor();
     }
 
     public void setIntakeState(IntakeState newState) {
@@ -55,21 +67,37 @@ public class Intake extends Subsystem {
         switch (currentState) {
             case INTAKING:
                 intakeMotor.set(INTAKE_SPEED);
+                intakeMotor.setSmartCurrentLimit(60);
                 break;
             case AUTO_INTAKING:
-                intakeMotor.set(INTAKE_SPEED);
+                intakeMotor.set(AUTO_INTAKE_SPEED);
                 if(!intakeSensor.get()){
+                    Superstructure.getInstance().setState(RobotState.DRIVE);
+                    setIntakeState(IntakeState.AUTO_EJECTING);
+                    led.setState(led.new RingIntakeState());
+                }
+                break;
+            case AUTO_EJECTING:
+                intakeMotor.setSmartCurrentLimit(60);
+                intakeMotor.set(AUTO_EJECT_SPEED);
+                if(intakeSensor.get()){
                     setIntakeState(IntakeState.OFF);
                 }
                 break;
             case EJECTING:
+                intakeMotor.setSmartCurrentLimit(100);
                 intakeMotor.set(EJECT_SPEED);
                 break;
             case OFF:
+                intakeMotor.setSmartCurrentLimit(60);
             default:
                 intakeMotor.stopMotor();
                 break;
         }
+    }
+
+    public Boolean ringReady(){
+        return !intakeSensor.get();
     }
       
     // BASE CONTROLS --------------------------------------------------->
@@ -91,6 +119,6 @@ public class Intake extends Subsystem {
         SmartDashboard.putBoolean("Is Intaking", intakeSensor.get());
         SmartDashboard.putNumber("Intake Speed", intakeMotor.get() * 100);
         SmartDashboard.putNumber("Intake Current", intakeMotor.getOutputCurrent());
-        SmartDashboard.putNumber("Intake Speed", INTAKE_SPEED);
+        SmartDashboard.putString("Intake State", currentState.toString());
     }
 }

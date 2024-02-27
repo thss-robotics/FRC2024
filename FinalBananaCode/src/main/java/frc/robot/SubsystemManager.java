@@ -18,8 +18,8 @@ import java.util.List;
 public class SubsystemManager implements ILooper {
     public static SubsystemManager mInstance = null;
 
-    private List<Subsystem> mAllSubsystems = new ArrayList<>();
-    private List<Loop> mLoops = new ArrayList<>();
+    private List<Subsystem> allSubsystems = new ArrayList<>();
+    private List<Loop> loops = new ArrayList<>();
 
     private SubsystemManager() {}
 
@@ -32,13 +32,13 @@ public class SubsystemManager implements ILooper {
     }
 
     public void outputToSmartDashboard(boolean disabled) {
-        mAllSubsystems.forEach(s -> s.outputTelemetry(disabled));
+        allSubsystems.forEach(s -> s.outputTelemetry(disabled));
     }
 
     public boolean checkSubsystems() {
         boolean ret_val = true;
 
-        for (Subsystem s : mAllSubsystems) {
+        for (Subsystem s : allSubsystems) {
             ret_val &= s.checkSystem();
         }
 
@@ -48,7 +48,7 @@ public class SubsystemManager implements ILooper {
     public boolean checkDeviceConfigurations() {
         boolean ret_val = true;
 
-        for (Subsystem s : mAllSubsystems) {
+        for (Subsystem s : allSubsystems) {
             boolean areDevicesOK = s.checkDeviceConfiguration();
             if (!areDevicesOK) {
                 s.rewriteDeviceConfiguration();
@@ -61,33 +61,33 @@ public class SubsystemManager implements ILooper {
     }
 
     public void stop() {
-        mAllSubsystems.forEach(Subsystem::stop);
+        allSubsystems.forEach(Subsystem::stop);
     }
 
     public List<Subsystem> getSubsystems() {
-        return mAllSubsystems;
+        return allSubsystems;
     }
 
     public void setSubsystems(Subsystem... allSubsystems) {
-        mAllSubsystems = Arrays.asList(allSubsystems);
+        this.allSubsystems = Arrays.asList(allSubsystems);
     }
 
     private class EnabledLoop implements Loop {
         @Override
         public void onStart(double timestamp) {
-            mLoops.forEach(l -> l.onStart(timestamp));
+            loops.forEach(l -> l.onStart(timestamp));
         }
 
         @Override
         public void onLoop(double timestamp) {
-            mAllSubsystems.forEach(Subsystem::readPeriodicInputs);
-            mLoops.forEach(l -> l.onLoop(timestamp));
-            mAllSubsystems.forEach(Subsystem::writePeriodicOutputs);
+            allSubsystems.forEach(Subsystem::readPeriodicInputs);
+            loops.forEach(l -> l.onLoop(timestamp));
+            allSubsystems.forEach(Subsystem::writePeriodicOutputs);
         }
 
         @Override
         public void onStop(double timestamp) {
-            mLoops.forEach(l -> l.onStop(timestamp));
+            loops.forEach(l -> l.onStop(timestamp));
         }
     }
 
@@ -99,7 +99,7 @@ public class SubsystemManager implements ILooper {
 
         @Override
         public void onLoop(double timestamp) {
-            mAllSubsystems.forEach(Subsystem::readPeriodicInputs);
+            allSubsystems.forEach(Subsystem::readPeriodicInputs);
 
             // periodically check that device configurations are OK
             if ((Timer.getFPGATimestamp() - mLastCheckTimeSeconds) > Constants.kRecheckDeviceIntervalSeconds) {
@@ -113,7 +113,7 @@ public class SubsystemManager implements ILooper {
     }
 
     public void registerEnabledLoops(Looper enabledLooper) {
-        mAllSubsystems.forEach(s -> s.registerEnabledLoops(this));
+        allSubsystems.forEach(s -> s.registerEnabledLoops(this));
         enabledLooper.register(new EnabledLoop());
     }
 
@@ -123,6 +123,6 @@ public class SubsystemManager implements ILooper {
 
     @Override
     public void register(Loop loop) {
-        mLoops.add(loop);
+        loops.add(loop);
     }
 }

@@ -13,6 +13,7 @@ import com.revrobotics.SparkMaxAbsoluteEncoder;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -33,7 +34,7 @@ public class Arm extends Subsystem{
     public enum ArmPosition { DRIVE, INTAKE, SPEAKER, AMP, CHAIN } 
     private ArmPosition currentPosition = ArmPosition.DRIVE;
 
-    private SlewRateLimiter armFilter = new SlewRateLimiter(1.5);
+    private SlewRateLimiter armFilter = new SlewRateLimiter(1.8);
     private Boolean brakeMode = true;
 
     // PID
@@ -41,9 +42,12 @@ public class Arm extends Subsystem{
     private double targetPosition;
     private final double minEffectivePower = 0.3;
 
+    // States
     private boolean movingToDrive = false;
 
-     
+    // Limit Switch
+    DigitalInput armLimitSwitch = new DigitalInput(5);
+
 
     public static Arm getInstance() {
         if (instance == null) {
@@ -66,32 +70,42 @@ public class Arm extends Subsystem{
 
         // Set up encoder
         armEncoder = new DutyCycleEncoder(0);
-        armEncoder.setPositionOffset(0.849);
+        armEncoder.setPositionOffset(0.8455);
 
         currentState = ArmState.MOVING;
         currentPosition = ArmPosition.DRIVE;
 
         // PID 
-        pidController = new PIDController(7.5, 0.2, 0.2);
+        pidController = new PIDController(6, 0.05, 0.2);
         pidController.setTolerance(0.005);
         pidController.setIntegratorRange(-0.4, 0.4);
     }
 
     // Move at velocity from -1 to 1  
-    public void moveArm(double velocity){
+    public void moveArm(double velocity, boolean safetyEnabled){
         double armPosition = getArmPosition();
-    
-        // Check if the arm is lower than 0.1 and moving down
-        if (armPosition < 0.1 && velocity < 0) {
-            // Lower the proportional gain (kP) dynamically
-            pidController.setP(5.0); // Adjust this value according to your requirements
-        } else {
-            // Reset the proportional gain to its default value
-            pidController.setP(7.5); // Default kP value
+
+        // Slow zone
+        if( (velocity < 0 && armPosition < 0.12) ||
+            (velocity > 0 && armPosition > 0.40)
+            ) {
+            if (safetyEnabled){
+                velocity *= 0.5;
+            }
+            if (Math.abs(velocity) > 0.25){
+                velocity = Math.copySign(0.25, velocity);
+            }
+        } 
+
+        velocity = armFilter.calculate(velocity);
+
+        // Safety Cutoff CANNOT BE DISABLEd
+        if( (velocity < 0 && (!armLimitSwitch.get() || armPosition < 0.01) ) || 
+            (velocity > 0 && armPosition > 0.47)){
+            velocity = 0;
         }
-    
+        
         if (currentState != ArmState.DISABLED) {
-            velocity = armFilter.calculate(velocity);
             leftLeader.set(ControlMode.PercentOutput, velocity);
             currentState = ArmState.MOVING;
         }
@@ -105,28 +119,41 @@ public class Arm extends Subsystem{
     public void armPeriodic(double velocity) {
         SmartDashboard.putString("Arm current Position", currentPosition.toString());
         SmartDashboard.putBoolean("Arm moving to drive", movingToDrive);
-        if(currentPosition != ArmPosition.DRIVE || movingToDrive){
+
+        
+        if(velocity < 0.25 && (currentPosition != ArmPosition.DRIVE || movingToDrive)){
             // Check the current arm position and adjust if necessary
             double currentPosition = getArmPosition(); // Gets the current encoder position
-
+            if(targetPosition < currentPosition){
+                pidController.setP(5);
+            } else {
+                pidController.setP(8);
+            }
             double pidOutput = pidController.calculate(currentPosition, targetPosition);
 
                 if (Math.abs(pidOutput) > 0 && Math.abs(pidOutput) < minEffectivePower) {
                     // Adjust the pidOutput to at least the minimum effective power
                     pidOutput = Math.copySign(minEffectivePower, pidOutput);
                 }
-
+                
             if (!pidController.atSetpoint()) { // Check if we're at the target position
-                moveArm(pidOutput);
+                moveArm(pidOutput, false);
             } else {
-                moveArm(0);
+                moveArm(0, true);
                 movingToDrive = false;
             }   
         }
         else {
-            moveArm(velocity);
+           
+            moveArm(velocity, true);
             movingToDrive = false;
+            currentPosition = ArmPosition.DRIVE;
         }   
+    }
+
+    public void setManualMode() {
+        currentPosition = ArmPosition.DRIVE;
+        movingToDrive = false;
     }
 
     public void moveToDrivePosition() {
@@ -232,6 +259,9 @@ public class Arm extends Subsystem{
         
 
         SmartDashboard.putNumber("Arm Target Position", targetPosition);
+
+        // Limit switch
+        SmartDashboard.putBoolean("Arm Limit Switch", armLimitSwitch.get());
 
         // Encoder
         SmartDashboard.putBoolean("Encoder Connected", armEncoder.isConnected());
