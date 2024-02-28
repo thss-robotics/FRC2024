@@ -12,13 +12,12 @@ public class Shooter extends Subsystem {
     private Spark lowerShooterMotor;
     private Spark upperShooterMotor;
 
-    // Filters
-    private SlewRateLimiter filter = new SlewRateLimiter(2);
-  
     // States
     public enum ShooterState {
         OFF,
-        SHOOTING
+        SPOOLING_UP,
+        SHOOTING,
+        SHOOTING_AUTO,
     }
 
     private ShooterState currentState = ShooterState.OFF;
@@ -46,9 +45,15 @@ public class Shooter extends Subsystem {
         updateMotors(speed);
     }
 
+    public ShooterState getShooterState() {
+        return currentState;  
+    }
+
     private void updateMotors(double speed) {
         if (currentState == ShooterState.SHOOTING) {
-            speed = filter.calculate(speed);
+            lowerShooterMotor.set(speed);
+            upperShooterMotor.set(speed); 
+        } else if (currentState == ShooterState.SHOOTING_AUTO) {
             lowerShooterMotor.set(speed);
             upperShooterMotor.set(speed); 
         } else {
@@ -79,6 +84,5 @@ public class Shooter extends Subsystem {
         
         SmartDashboard.putNumber("Lower Shooter Speed", lowerShooterMotor.get() * 100);
         SmartDashboard.putNumber("Upper Shooter Speed", upperShooterMotor.get() * 100);
-        SmartDashboard.putNumber("Filtered Shooter Speed", filter.calculate(shootSpeed) * 100);
     }
 }

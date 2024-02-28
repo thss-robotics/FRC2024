@@ -619,6 +619,19 @@
               "_glyph": 148,
               "_showGlyph": false
             }
+          },
+          "5,3": {
+            "size": [
+              1,
+              1
+            ],
+            "content": {
+              "_type": "Text View",
+              "_source0": "network_table:///SmartDashboard/Intake State",
+              "_title": "/SmartDashboard/Intake State",
+              "_glyph": 148,
+              "_showGlyph": false
+            }
           }
         }
       }
@@ -669,7 +682,7 @@
             ],
             "content": {
               "_type": "Text View",
-              "_source0": "network_table:///SmartDashboard/Current State",
+              "_source0": "network_table:///SmartDashboard/State Speed",
               "_title": "/SmartDashboard/Current State",
               "_glyph": 148,
               "_showGlyph": false
@@ -717,6 +730,19 @@
             }
           }
         }
+      }
+    },
+    {
+      "title": "Tab 4",
+      "autoPopulate": false,
+      "autoPopulatePrefix": "",
+      "widgetPane": {
+        "gridSize": 100.0,
+        "showGrid": true,
+        "hgap": 16.0,
+        "vgap": 16.0,
+        "titleType": 0,
+        "tiles": {}
       }
     }
   ],

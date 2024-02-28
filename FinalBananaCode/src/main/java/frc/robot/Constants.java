@@ -23,7 +23,8 @@ public class Constants {
     public static Boolean kEnableCameraServer = true;
 
     // Config
-    public static Double kRecheckDeviceIntervalSeconds = 10.0;
+    public static double kRecheckDeviceIntervalSeconds = 10.0;
+    public static double kShootWaitTime = 1.0;
     
     // Arm Positions
     public static final double kArmDriveAbsolutePosition = 0.156;

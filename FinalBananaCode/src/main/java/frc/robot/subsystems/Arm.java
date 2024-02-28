@@ -70,7 +70,7 @@ public class Arm extends Subsystem{
 
         // Set up encoder
         armEncoder = new DutyCycleEncoder(0);
-        armEncoder.setPositionOffset(0.8455);
+        armEncoder.setPositionOffset(0.846);
 
         currentState = ArmState.MOVING;
         currentPosition = ArmPosition.DRIVE;
@@ -92,7 +92,7 @@ public class Arm extends Subsystem{
             if (safetyEnabled){
                 velocity *= 0.5;
             }
-            if (Math.abs(velocity) > 0.25){
+            if (Math.abs(velocity) > 0.25 && Superstructure.RobotState.CHAIN != Superstructure.getInstance().getState()){
                 velocity = Math.copySign(0.25, velocity);
             }
         } 

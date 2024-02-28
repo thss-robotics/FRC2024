@@ -1,19 +1,17 @@
 package frc.robot; 
 
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.lib.loops.Looper;
-import frc.robot.controlboard.ControlBoard;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Intake.IntakeState;
+import frc.robot.subsystems.Shooter.ShooterState;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.Intake.IntakeState;
-import frc.robot.subsystems.LED.RingIntakeState;
 import frc.robot.subsystems.Superstructure.RobotState;
 
 public class Robot extends TimedRobot {
@@ -72,7 +70,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic(){
     try {
-      superstructure.execute();
+      superstructure.superstructurePeriodic();
 
       // Reset NavX
       if(joystickLeft.getRawButton(11)){
@@ -136,15 +134,36 @@ public class Robot extends TimedRobot {
       double rightDrive = -controller.getRawAxis(5) + -joystickRight.getY();
 
       // Arm Inputs
-      double armVelocity = controller.getRawAxis(2) - controller.getRawAxis(3);
-      Boolean runIntake = controller.getRawButton(5) || joystickLeft.getRawButton(1);
-      Boolean runShooter = controller.getRawButton(6)  || joystickRight.getRawButton(1);
-      Boolean runIntakeBack = controller.getYButton() || joystickLeft.getRawButton(4) || controlBoard.getRawButton(6);
+      double armVelocity = 0;
+      Boolean runIntake = false;
+      Boolean runShooter = false;
+      Boolean runIntakeBack = false;
+      Boolean shootRing = false;
 
-      // Run subsystems
-      drive.tankDrive(leftDrive, rightDrive);
-      
-      // Arm Overrides
+      RobotState currentState = superstructure.getState();
+    
+      if(currentState == RobotState.DRIVE){
+        runShooter = joystickRight.getTrigger();
+        runIntake = joystickLeft.getTrigger();
+        runIntakeBack = joystickLeft.getRawButton(4);
+      } else if(currentState == RobotState.INTAKE){
+        runIntake = joystickRight.getTrigger();
+        runIntakeBack = joystickLeft.getTrigger();
+      } else if(currentState == RobotState.SPEAKER){
+        runIntakeBack = joystickLeft.getTrigger();
+        shootRing = joystickRight.getTriggerPressed();
+      } else if(currentState == RobotState.AMP){
+        runIntakeBack = joystickLeft.getTrigger();
+        shootRing = joystickRight.getTriggerPressed();
+      } 
+
+
+      // Overrides
+      runIntake = runIntake || controller.getRawButton(5);
+      runIntakeBack = runIntakeBack || controlBoard.getRawButton(6) || controller.getYButton();
+      runShooter = runShooter || controller.getRawButton(6);
+      armVelocity = controller.getRawAxis(2) - controller.getRawAxis(3);
+
       if(controlBoard.getRawAxis(1) == 1){
         armVelocity = -0.5;
       } else if(controlBoard.getRawAxis(1)== -1){
@@ -153,14 +172,8 @@ public class Robot extends TimedRobot {
 
       if(joystickLeft.getPOV() == 0){
         armVelocity = 0.75;
-        if(superstructure.getState() == RobotState.CHAIN){
-          armVelocity = 1;
-        }
       } else if(joystickLeft.getPOV() == 180){
         armVelocity = -0.75;
-        if(superstructure.getState() == RobotState.CHAIN){
-          armVelocity = -1;
-        }
       }
 
       if(joystickRight.getPOV() == 0){
@@ -169,7 +182,16 @@ public class Robot extends TimedRobot {
         armVelocity = -0.5;
       }
 
-      // Run Arm
+      if(currentState == RobotState.CHAIN){
+        armVelocity += joystickLeft.getTrigger() ? -1: 0;
+        armVelocity += joystickRight.getTrigger() ? 1 : 0;
+      }
+    
+
+      // Run drive
+      drive.tankDrive(leftDrive, rightDrive);
+   
+      // Run Arm if not disabled
       if(!controlBoard.getRawButton(12)){
         arm.armPeriodic(armVelocity);
       } else {
@@ -178,26 +200,27 @@ public class Robot extends TimedRobot {
       }
 
       // Run Intake
+      IntakeState currentIntakeState = intake.getIntakeState();
       if(runIntake){
         intake.setIntakeState(IntakeState.INTAKING);
       } else if (runIntakeBack){
         intake.setIntakeState(IntakeState.EJECTING);
-      } else {
-      if(intake.getIntakeState() != IntakeState.OFF && 
-        intake.getIntakeState() != IntakeState.AUTO_INTAKING &&
-        intake.getIntakeState() != IntakeState.AUTO_EJECTING
-        )
-        intake.setIntakeState(IntakeState.OFF);
+      } else if( currentIntakeState == IntakeState.INTAKING || 
+            currentIntakeState == IntakeState.EJECTING ){
+          intake.setIntakeState(IntakeState.OFF);
       } 
 
       // Run Shooter
       if(runShooter){
-        shooter.shoot();
-      } else {
+        shooter.setShooterState(ShooterState.SHOOTING, 100);
+      } else if (shooter.getShooterState() == ShooterState.SHOOTING){
         shooter.stop();
       }  
 
-      
+      // Fire ring
+      if(shootRing){
+        superstructure.shootRing();
+      }
     }
     catch (Throwable t) {
       throw t;

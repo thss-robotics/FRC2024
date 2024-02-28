@@ -27,15 +27,24 @@ public class Intake extends Subsystem {
         AUTO_EJECTING,
         AUTO_INTAKING,
         INTAKING,
-        EJECTING
+        EJECTING,
+        SHOOTING,
     }
+
+    public enum RingState {
+        NONE,
+        LOADED
+    }
+
     private IntakeState currentState = IntakeState.OFF;
+    private RingState ringState = RingState.NONE;
     
     public Boolean intakeRunning = true;
     private static double INTAKE_SPEED = 1.0;
     private static double EJECT_SPEED = -1.0;
-     private static double AUTO_INTAKE_SPEED = 1.0;
+    private static double AUTO_INTAKE_SPEED = 1.0;
     private static double AUTO_EJECT_SPEED = -0.5;
+    private static double SHOOT_SPEED = 1;
 
     public static Intake getInstance() {
         if (instance == null) {
@@ -82,12 +91,19 @@ public class Intake extends Subsystem {
                 intakeMotor.set(AUTO_EJECT_SPEED);
                 if(intakeSensor.get()){
                     setIntakeState(IntakeState.OFF);
+                    ringState = RingState.LOADED;
                 }
                 break;
             case EJECTING:
                 intakeMotor.setSmartCurrentLimit(100);
                 intakeMotor.set(EJECT_SPEED);
                 break;
+            case SHOOTING:
+                intakeMotor.setSmartCurrentLimit(100);
+                intakeMotor.set(SHOOT_SPEED);
+                if(!intakeSensor.get()){
+                    ringState = RingState.NONE;
+                }
             case OFF:
                 intakeMotor.setSmartCurrentLimit(60);
             default:
@@ -96,8 +112,10 @@ public class Intake extends Subsystem {
         }
     }
 
-    public Boolean ringReady(){
-        return !intakeSensor.get();
+    public Boolean ringLoaded(){
+        Boolean ringInIntake = !intakeSensor.get();
+        Boolean ringLoadedAndSet = ringState == RingState.LOADED;
+        return ringInIntake || ringLoadedAndSet;
     }
       
     // BASE CONTROLS --------------------------------------------------->

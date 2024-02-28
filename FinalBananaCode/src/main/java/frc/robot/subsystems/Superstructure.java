@@ -7,14 +7,18 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Intake.IntakeState;
+import frc.robot.subsystems.Shooter.ShooterState;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.VideoSink;
+import edu.wpi.first.cscore.VideoSource.ConnectionStrategy;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.cscore.UsbCamera;
 
 public class Superstructure {
     private static Superstructure instance;
 
+    // States
     public enum RobotState {
         DRIVE,
         INTAKE,
@@ -26,14 +30,30 @@ public class Superstructure {
     private RobotState currentState;
     private RobotState previousState;
 
+    // Subsystems
     private final Shooter shooter = Shooter.getInstance();
     private final Drive drive = Drive.getInstance();
     private final Intake intake = Intake.getInstance();
     private final Arm arm = Arm.getInstance();
     private final LED led = LED.getInstance();
+
+    // Cameras
     private UsbCamera shooterCamera;
     private UsbCamera intakeCamera;
     private VideoSink server;
+
+    // Ring Shoot Command
+    private boolean isShootingRing = false;
+    private Timer shootTimer = new Timer();
+    private double shootWaitTime = Constants.kShootWaitTime; // Define this constant in your Constants class
+
+    public static Superstructure getInstance() {
+        if (instance == null) {
+            instance = new Superstructure();
+        }
+        return instance;
+    }
+
 
     private Superstructure() {
         currentState = RobotState.DRIVE;
@@ -43,17 +63,45 @@ public class Superstructure {
         }
     }
 
-    public static Superstructure getInstance() {
-        if (instance == null) {
-            instance = new Superstructure();
+     public void superstructurePeriodic() {
+        led.ledPeriodic();
+        intake.intakePeriodic();
+        drive.updateOdometry();
+
+        // Handle ring shooting
+        if (isShootingRing) {
+            if (shootTimer.hasElapsed(shootWaitTime)) {
+                intake.setIntakeState(Intake.IntakeState.SHOOTING);
+                if (!intake.ringLoaded()) {
+                    setState(RobotState.DRIVE);
+                    shooter.setShooterState(Shooter.ShooterState.OFF, 0);
+                    intake.setIntakeState(Intake.IntakeState.OFF);
+                    isShootingRing = false;
+                    shootTimer.stop();
+                }
+            }
         }
-        return instance;
     }
 
+   
     private void initCameras() {
+        // Connect
         shooterCamera = CameraServer.startAutomaticCapture(0);
         intakeCamera = CameraServer.startAutomaticCapture(1);
+
+        // Keep connected
+        shooterCamera.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
+        intakeCamera.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
+
+        // Init server
         server = CameraServer.getServer();
+    }
+
+    public void shootRing () {
+        shooter.setShooterState(ShooterState.SHOOTING_AUTO, 1.0);
+        isShootingRing = true;
+        shootTimer.reset();
+        shootTimer.start();
     }
 
     public void setState(RobotState newState) {
@@ -102,9 +150,4 @@ public class Superstructure {
         return currentState;
     }
 
-    public void execute() {
-        led.ledPeriodic();
-        intake.intakePeriodic();
-        drive.updateOdometry();
-    }
 }
