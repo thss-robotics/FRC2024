@@ -20,7 +20,7 @@ public class Constants {
     public static final double kJoystickThreshold = 0.1;
 
     // Devices
-    public static Boolean kEnableCameraServer = true;
+    public static Boolean kEnableCameraServer = false;
 
     // Config
     public static double kRecheckDeviceIntervalSeconds = 10.0;
@@ -28,6 +28,7 @@ public class Constants {
     
     // Arm Positions
     public static final double kArmDriveAbsolutePosition = 0.156;
+    public static final double kArmDriveReverseAbsolutePosition = 0.156;
     public static final double kArmIntakeAbsolutePosition = 0.000;
     public static final double kArmSpeakerAbsolutePosition = 0.0582;
     public static final double kArmAmpAbsolutePosition = 0.262;

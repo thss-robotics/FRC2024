@@ -31,7 +31,7 @@ public class Arm extends Subsystem{
     public enum ArmState { MOVING, HOLDING, DISABLED } 
     private ArmState currentState = ArmState.DISABLED;
 
-    public enum ArmPosition { DRIVE, INTAKE, SPEAKER, AMP, CHAIN } 
+    public enum ArmPosition { DRIVE, DRIVE_REVERSE, INTAKE, SPEAKER, AMP, CHAIN, } 
     private ArmPosition currentPosition = ArmPosition.DRIVE;
 
     private SlewRateLimiter armFilter = new SlewRateLimiter(1.8);
@@ -121,9 +121,12 @@ public class Arm extends Subsystem{
         SmartDashboard.putBoolean("Arm moving to drive", movingToDrive);
 
         
-        if(velocity < 0.25 && (currentPosition != ArmPosition.DRIVE || movingToDrive)){
+        if( velocity < 0.25 && 
+        ((  currentPosition != ArmPosition.DRIVE && 
+            currentPosition!= ArmPosition.DRIVE_REVERSE) || movingToDrive)){
+            
             // Check the current arm position and adjust if necessary
-            double currentPosition = getArmPosition(); // Gets the current encoder position
+            double currentPosition = getArmPosition(); 
             if(targetPosition < currentPosition){
                 pidController.setP(5);
             } else {
@@ -161,6 +164,12 @@ public class Arm extends Subsystem{
         currentPosition = ArmPosition.DRIVE;
         movingToDrive = true;
     }
+
+     public void moveToDriveReversePosition() {
+        moveArmToPosition(Constants.kArmDriveReverseAbsolutePosition);
+        currentPosition = ArmPosition.DRIVE_REVERSE;
+        movingToDrive = true;
+    }  
     
     public void moveToIntakePosition() {
         moveArmToPosition(Constants.kArmIntakeAbsolutePosition);

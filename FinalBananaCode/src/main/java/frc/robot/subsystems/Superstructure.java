@@ -6,6 +6,7 @@ import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.Camera.CameraState;
 import frc.robot.subsystems.Intake.IntakeState;
 import frc.robot.subsystems.Shooter.ShooterState;
 import edu.wpi.first.cameraserver.CameraServer;
@@ -21,6 +22,7 @@ public class Superstructure {
     // States
     public enum RobotState {
         DRIVE,
+        DRIVE_REVERSE,
         INTAKE,
         SPEAKER,
         AMP,
@@ -36,11 +38,7 @@ public class Superstructure {
     private final Intake intake = Intake.getInstance();
     private final Arm arm = Arm.getInstance();
     private final LED led = LED.getInstance();
-
-    // Cameras
-    private UsbCamera shooterCamera;
-    private UsbCamera intakeCamera;
-    private VideoSink server;
+    private final Camera camera = Camera.getInstance();
 
     // Ring Shoot Command
     private boolean isShootingRing = false;
@@ -58,9 +56,6 @@ public class Superstructure {
     private Superstructure() {
         currentState = RobotState.DRIVE;
         previousState = RobotState.DRIVE;
-        if(Constants.kEnableCameraServer){
-            initCameras();
-        }
     }
 
      public void superstructurePeriodic() {
@@ -83,18 +78,52 @@ public class Superstructure {
         }
     }
 
-   
-    private void initCameras() {
-        // Connect
-        shooterCamera = CameraServer.startAutomaticCapture(0);
-        intakeCamera = CameraServer.startAutomaticCapture(1);
+    public void setState(RobotState newState) {
+        previousState = currentState;
+        currentState = newState;
+        SmartDashboard.putString("Current Robot State", currentState.toString());
+        switch (newState) {
+            case DRIVE:
+                if(previousState == RobotState.SPEAKER || previousState == RobotState.AMP){
+                    setState(RobotState.DRIVE_REVERSE);
+                    break;
+                } else {
+                    drive.setDriveMode(false);
+                }
+                arm.moveToDrivePosition();
+                camera.setCameraDriveMode();
+                break;
+            case DRIVE_REVERSE:
+                arm.moveToDriveReversePosition();
+                drive.setDriveMode(true);
+                camera.setCameraDriveReverseMode();
+                break;
+            case INTAKE:
+                intake.setIntakeState(IntakeState.AUTO_INTAKING);
+                arm.moveToIntakePosition();
+                drive.setIntakeMode();
+                camera.setCameraIntakeMode();
+                break;
+            case SPEAKER:
+                arm.moveToSpeakerPosition();
+                drive.setSpeakerMode();
+                camera.setCameraSpeakerMode();
+                break;
+            case AMP:
+                arm.moveToAmpPosition();
+                drive.setAmpMode();
+                camera.setCameraAmpMode();
+                break;
+            case CHAIN:
+                arm.moveToChainPosition();
+                drive.setChainMode();
+                camera.setCameraChainMode();
+                break;
+        }
+    }
 
-        // Keep connected
-        shooterCamera.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
-        intakeCamera.setConnectionStrategy(ConnectionStrategy.kKeepOpen);
-
-        // Init server
-        server = CameraServer.getServer();
+    public RobotState getState() {
+        return currentState;
     }
 
     public void shootRing () {
@@ -102,52 +131,6 @@ public class Superstructure {
         isShootingRing = true;
         shootTimer.reset();
         shootTimer.start();
-    }
-
-    public void setState(RobotState newState) {
-        previousState = currentState;
-        currentState = newState;
-        SmartDashboard.putString("Current State", currentState.toString());
-        SmartDashboard.putString("Prev State", previousState.toString());
-        switch (newState) {
-            case DRIVE:
-                arm.moveToDrivePosition();
-                SmartDashboard.putBoolean("testing", previousState == RobotState.SPEAKER || previousState == RobotState.AMP);
-                if(previousState == RobotState.SPEAKER || previousState == RobotState.AMP){
-                    drive.setDriveMode(true);
-                    server.setSource(intakeCamera);
-                } else {
-                    drive.setDriveMode(false);
-                    server.setSource(shooterCamera);
-                }
-                
-                break;
-            case INTAKE:
-                intake.setIntakeState(IntakeState.AUTO_INTAKING);
-                arm.moveToIntakePosition();
-                server.setSource(intakeCamera);
-                drive.setIntakeMode();
-                break;
-            case SPEAKER:
-                arm.moveToSpeakerPosition();
-                server.setSource(shooterCamera);
-                drive.setSpeakerMode();
-                break;
-            case AMP:
-                arm.moveToAmpPosition();
-                server.setSource(shooterCamera);
-                drive.setAmpMode();
-                break;
-            case CHAIN:
-                arm.moveToChainPosition();
-                server.setSource(intakeCamera);
-                drive.setChainMode();
-                break;
-        }
-    }
-
-    public RobotState getState() {
-        return currentState;
     }
 
 }

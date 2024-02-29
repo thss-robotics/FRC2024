@@ -3,6 +3,8 @@ package frc.robot.subsystems;
 import frc.lib.Subsystem;
 import frc.robot.Constants;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -110,31 +112,6 @@ public class Drive extends Subsystem  {
 
         // Reset IMU
         navX.reset();
-
-        /* 
-        AutoBuilder.configureRamsete(
-            this::getPose, // Robot pose supplier
-            this::resetPose, // Method to reset odometry (will be called if your auto has a starting pose)
-            this::getCurrentSpeeds, // Current ChassisSpeeds supplier
-            this::drive, // Method that will drive the robot given ChassisSpeeds
-            new ReplanningConfig(), // Default path replanning config. See the API for the options here
-            () -> {
-              // Boolean supplier that controls when the path will be mirrored for the red alliance
-              // This will flip the path being followed to the red side of the field.
-              // THE ORIGIN WILL REMAIN ON THE BLUE SIDE
-
-              var alliance = DriverStation.getAlliance();
-              if (alliance.isPresent()) {
-                return alliance.get() == DriverStation.Alliance.Red;
-              }
-              return false;
-            },
-            this);
-
-
-
-        PathPlannerLogging.setLogActivePathCallback((poses) -> field.getObject("path").setPoses(poses));    
-        SmartDashboard.putData("Field", field);*/
     }
 
     // DRIVES
@@ -256,15 +233,15 @@ public class Drive extends Subsystem  {
     // ODOMETRY
 
     public double getLeftDistance() {
-        return leftEncoder.getDistance() / 600 / 5.5 * 47.8778 * 100 /1.5;
+        return leftEncoder.getDistance() / 600 / 5.5 * 47.8778 /1.5;
     }
 
     public double getRightDistance() {
-        return rightEncoder.getDistance() / 600 / 5.5 * 47.8778 * 100;
+        return rightEncoder.getDistance() / 600 / 5.5 * 47.8778 /1.5;
     }
     
     public void updateOdometry() {
-        odometry.update(Rotation2d.fromDegrees(getHeading()), leftEncoder.getDistance(), rightEncoder.getDistance());
+        odometry.update(Rotation2d.fromDegrees(getHeading()), getLeftDistance(), getRightDistance());
     }
 
     public Pose2d getPose() {
@@ -343,6 +320,9 @@ public class Drive extends Subsystem  {
 
     // @Override
     public void outputTelemetry(boolean disabled) {
+        Logger.recordOutput("Robot Position", getPose());
+        Logger.recordOutput("Robot Position");
+        
         // Drivetrain outputs
         SmartDashboard.putNumber("Left Drivetrain Output", frontLeftMotor.get() * 100);
         SmartDashboard.putNumber("Right Drivetrain Output", frontRightMotor.get() * 100);

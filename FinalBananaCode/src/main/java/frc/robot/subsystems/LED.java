@@ -34,13 +34,17 @@ public class LED extends Subsystem {
     }
 
     private LED() {
-        leds = new AddressableLED(9); // Single PWM port for all LEDs
+        // Connect strip
+        leds = new AddressableLED(9);
+
+        // Set up buffer
         int totalLength = armBodyLength + underLength;
         ledBuffer = new AddressableLEDBuffer(totalLength);
         leds.setLength(ledBuffer.getLength());
         leds.setData(ledBuffer);
         leds.start();
-        currentState = new OffState(); // Initial state
+
+        currentState = new OffState();
         previousState = new OffState();
     }
 

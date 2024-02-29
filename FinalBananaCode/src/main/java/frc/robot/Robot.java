@@ -1,10 +1,22 @@
 package frc.robot; 
 
+import org.littletonrobotics.junction.LogFileUtil;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGReader;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.lib.loops.Looper;
+import frc.robot.Auto.AutoManager;
+import frc.robot.commands.FollowTrajectoryCommand;
 import frc.robot.subsystems.Arm;
+import frc.robot.subsystems.Camera;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Intake.IntakeState;
@@ -14,7 +26,7 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.RobotState;
 
-public class Robot extends TimedRobot {
+public class Robot  extends LoggedRobot {
   // Loopers
   private final Looper enabledLooper = new Looper(Constants.kLooperDt);
   private final Looper disabledLooper = new Looper(Constants.kLooperDt);
@@ -25,7 +37,8 @@ public class Robot extends TimedRobot {
   private Arm arm ;
   private Shooter shooter;
   private Intake intake;
-  private LED led ;
+  private LED led;
+  private Camera camera;
 
   // Controllers
   private XboxController controller;
@@ -36,16 +49,37 @@ public class Robot extends TimedRobot {
   // States
   Boolean systemsHealthy;
 
+  // Auto
+  private AutoManager autoManager;
+  private AutoModeSelector autoModeSelector;
+  private FollowTrajectoryCommand followTrajectoryCommand;
+
 
   @Override
   public void robotInit() {
     try {
+      Logger.recordMetadata("ProjectName", "CobraChicken 2024"); // Set a metadata value
+
+      if (isReal()) {
+          Logger.addDataReceiver(new NT4Publisher()); // Publish data to NetworkTables
+          new PowerDistribution(1, ModuleType.kRev); // Enables power distribution logging
+      } 
+
+      Logger.start(); 
+
+
+      // Instantiate subsystems
       drive = Drive.getInstance();
       arm = Arm.getInstance();
       intake = Intake.getInstance();
       shooter = Shooter.getInstance();
       led = LED.getInstance();
+      camera = Camera.getInstance();
       superstructure = Superstructure.getInstance();
+
+      // Auto
+      autoManager = AutoManager.getInstance();
+      autoModeSelector = new AutoModeSelector();
 
       // Enable brakes
       arm.enableArmBrake();
@@ -110,6 +144,12 @@ public class Robot extends TimedRobot {
   @Override 
   public void autonomousInit(){
     led.setState(led.new AutonomousState());
+
+    //autoModeSelector.getAutoModeForParams();
+
+    var trajectory = autoManager.getTrajectory();
+    followTrajectoryCommand = new FollowTrajectoryCommand(trajectory);
+    followTrajectoryCommand.schedule();
   }
 
   @Override 
