@@ -35,17 +35,9 @@ public class Robot extends LoggedRobot {
 
   // Controllers
   private XboxController controller;
-  private Joystick joystickLeft;
-  private Joystick joystickRight;
-  private Joystick controlBoard;
 
   // States
   Boolean systemsHealthy;
-
-  // Auto
-  private AutoManager autoManager;
-  private AutoModeSelector autoModeSelector;
-  private FollowTrajectoryCommand followTrajectoryCommand;
 
   // Hardware
   PowerDistribution powerDistribution;
@@ -68,20 +60,14 @@ public class Robot extends LoggedRobot {
       camera = Camera.getInstance();
       superstructure = Superstructure.getInstance();
       
-      // Auto
-      autoManager = AutoManager.getInstance();
-      autoModeSelector = new AutoModeSelector();
-
+     
       // Enable brakes
       arm.enableArmBrake();
       drive.enableDriveBrake(); 
 
       // Set up controller or joystick 
       controller = new XboxController(0);
-      joystickLeft = new Joystick(2);
-      joystickRight = new Joystick(1);
-      controlBoard = new Joystick(3);
-
+    
       // Check health
       systemsHealthy = subsystemManager.checkSubsystems();
 
@@ -97,35 +83,38 @@ public class Robot extends LoggedRobot {
     try {
       superstructure.superstructurePeriodic();
 
-      // Reset NavX
-      if(joystickLeft.getRawButton(11)){
-        drive.resetHeading();
-      }
-
       // Set robot states
-      if(controlBoard.getRawButtonPressed(1)){
+      if(controller.getAButtonPressed()){
         superstructure.setState(RobotState.DRIVE);
       }
-      if(controlBoard.getRawButtonPressed(2)){
+      if(controller.getBButtonPressed()){
         superstructure.setState(RobotState.INTAKE);
       }
-      if(controlBoard.getRawButtonPressed(3)){
+      if(controller.getXButtonPressed()){
         superstructure.setState(RobotState.SPEAKER);
       }
-      if(controlBoard.getRawButtonPressed(4)){
+      if(controller.getYButtonPressed()){
         superstructure.setState(RobotState.AMP);
       }
-      if(controlBoard.getRawButtonPressed(5)){
-        superstructure.setState(RobotState.CHAIN);
-      }
 
-      if(controlBoard.getRawButtonPressed(11)){
+      if(controller.getRightBumper()){
         systemsHealthy = subsystemManager.checkSubsystems();
         led.setState(led.new HealthNotifyState(systemsHealthy));
       }
 
+      if(controller.getStartButtonPressed()){
+        camera.toggleCameras();
+      }
+
       // Telemetry
+      /* 
       subsystemManager.outputToSmartDashboard(isDisabled());
+      drive.outputTelemetry(isDisabled());
+      arm.outputTelemetry(isDisabled());
+      intake.outputTelemetry(isDisabled());
+      shooter.outputTelemetry(isDisabled());
+      superstructure.outputTelemetry(isDisabled());
+      camera.outputTelemetry(isDisabled());*/
     }
     catch (Throwable t) {
       throw t;
@@ -135,17 +124,10 @@ public class Robot extends LoggedRobot {
   @Override 
   public void autonomousInit(){
     led.setState(led.new AutonomousState());
-
-    //autoModeSelector.getAutoModeForParams();
-
-    var trajectory = autoManager.getTrajectory();
-    followTrajectoryCommand = new FollowTrajectoryCommand(trajectory);
-    followTrajectoryCommand.schedule();
   }
 
   @Override 
   public void autonomousPeriodic(){
-    
   }
 
   @Override 
@@ -161,8 +143,8 @@ public class Robot extends LoggedRobot {
   public void teleopPeriodic(){
     try {
       // Drive Inputs
-      double leftDrive = controller.getRawAxis(1) + joystickLeft.getY(); 
-      double rightDrive = -controller.getRawAxis(5) + -joystickRight.getY();
+      double leftDrive = controller.getRawAxis(1) + controller.getLeftY(); 
+      double rightDrive = -controller.getRawAxis(5) + -controller.getRightY();
 
       // Arm Inputs
       double armVelocity = 0;
@@ -174,56 +156,45 @@ public class Robot extends LoggedRobot {
       // Adjust controls based on mode
       RobotState currentState = superstructure.getState();
     
+      /* 
       if(currentState == RobotState.DRIVE){
-        runShooter = joystickRight.getTrigger();
-        runIntake = joystickLeft.getTrigger();
-        runIntakeBack = joystickLeft.getRawButton(4);
+        runShooter = controller.getRightTriggerAxis()> 0.2;
+        runIntake = controller.getLeftTriggerAxis() > 0.2;
+        runIntakeBack = controller.getLeftBumperPressed();
       } else if(currentState == RobotState.INTAKE){
-        runIntake = joystickRight.getTrigger();
-        runIntakeBack = joystickLeft.getTrigger();
+        runIntake =  controller.getLeftTriggerAxis() > 0.2;
+        runIntakeBack = controller.getRightTriggerAxis()> 0.2;
       } else if(currentState == RobotState.SPEAKER){
-        runIntakeBack = joystickLeft.getTrigger();
-        shootRing = joystickRight.getTriggerPressed();
+        runIntakeBack = controller.getRightTriggerAxis()> 0.2;
+        shootRing =  controller.getRightTriggerAxis()> 0.2;
       } else if(currentState == RobotState.AMP){
-        runIntakeBack = joystickLeft.getTrigger();
-        shootRing = joystickRight.getTriggerPressed();
+        runIntakeBack = controller.getRightTriggerAxis()> 0.2;
+        shootRing =  controller.getRightTriggerAxis()> 0.2;
       } 
 
-      // Overrides
-      runIntake = runIntake || controller.getRawButton(5);
-      runIntakeBack = runIntakeBack || controlBoard.getRawButton(6) || controller.getYButton();
-      runShooter = runShooter || controller.getRawButton(6);
-      armVelocity = controller.getRawAxis(2) - controller.getRawAxis(3);
-
-      if(controlBoard.getRawAxis(1) == 1){
-        armVelocity = -0.5;
-      } else if(controlBoard.getRawAxis(1)== -1){
+      if(controller.getPOV() == 0){
         armVelocity = 0.5;
-      }
-
-      if(joystickLeft.getPOV() == 0){
-        armVelocity = 0.75;
-      } else if(joystickLeft.getPOV() == 180){
-        armVelocity = -0.75;
-      }
-
-      if(joystickRight.getPOV() == 0){
-        armVelocity = 0.5;
-      } else if(joystickRight.getPOV() == 180){
+      } else if(controller.getPOV() == 180){
         armVelocity = -0.5;
       }
 
       if(currentState == RobotState.CHAIN){
-        armVelocity += joystickLeft.getTrigger() ? -1: 0;
-        armVelocity += joystickRight.getTrigger() ? 1 : 0;
+        armVelocity += controller.getRightTriggerAxis() > 0.2 ? -1: 0;
+        armVelocity += controller.getRightTriggerAxis() > 0.2 ? 1 : 0;
       }
     
+      */
 
+      armVelocity = controller.getLeftTriggerAxis() - controller.getRightTriggerAxis();
+
+      runIntake = controller.getLeftBumper();
+      runShooter = controller.getRightBumper();
+      runIntakeBack = controller.getBackButton();
       // Drive
       drive.tankDrive(leftDrive, rightDrive);
    
       // Run Arm if not stopped
-      if(!controlBoard.getRawButton(12)){
+      if(!controller.getLeftStickButton() && !controller.getRightStickButton()){
         arm.armPeriodic(armVelocity);
       } else {
         arm.moveArm(0, true);
@@ -267,8 +238,5 @@ public class Robot extends LoggedRobot {
   @Override
   public void disabledPeriodic() {
     DriverStation.getAlliance();
-
-    autoModeSelector.outputToSmartDashboard();
-    autoModeSelector.updateModeCreator();
   }
 }

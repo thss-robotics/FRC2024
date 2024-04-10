@@ -59,7 +59,7 @@ public class Drive extends Subsystem  {
     private SlewRateLimiter filterTurn = new SlewRateLimiter(1);
 
     // States
-    private double speedLimit = 1;
+    private double speedLimit = 0.7;
     private Boolean brakeMode = true;
     private Boolean reverseForwardsDirection = false;
 
@@ -112,44 +112,44 @@ public class Drive extends Subsystem  {
 
     // DRIVES
 
-    public void tankDrive(double leftDrive, double rightDrive) {
+    public void tankDrive(double leftInput, double rightInput) {
+        // Exponential scaling parameters
+        double base = 2.0; 
+    
+        // Apply exponential scaling for finer control at low speeds
+        double leftDrive = Math.signum(leftInput) * (Math.pow(base, Math.abs(leftInput)) - 1) / (base - 1);
+        double rightDrive = Math.signum(rightInput) * (Math.pow(base, Math.abs(rightInput)) - 1) / (base - 1);
+    
         // Apply speed limits
         leftDrive *= speedLimit;
         rightDrive *= speedLimit;
-
-        if(reverseForwardsDirection){
-            double newleftDrive = rightDrive;
+    
+        // Existing logic for reverse direction and filters
+        if (reverseForwardsDirection) {
+            double temp = rightDrive;
             rightDrive = leftDrive;
-            leftDrive = newleftDrive;
+            leftDrive = temp;
         }
-     
-        if(enableFilter){
-          leftDrive = filterLeft.calculate(leftDrive);
-          rightDrive = filterRight.calculate(rightDrive);
+    
+        if (enableFilter) {
+            leftDrive = filterLeft.calculate(leftDrive);
+            rightDrive = filterRight.calculate(rightDrive);
         }
-
-        // Detect intention to drive straight and apply gyro stabilization
+    
+        // Existing logic for gyro stabilization
         boolean isStraightDrive = Math.abs(leftDrive + rightDrive) < straightDriveThreshold;
-        SmartDashboard.putNumber("Gyro Assist Threshhold", leftDrive + rightDrive);
-        boolean minimumStabilizeSpeed = (Math.abs(leftDrive) + Math.abs(rightDrive)) > 0.2;
+        boolean minimumStabilizeSpeed = (Math.abs(leftDrive) + Math.abs(rightDrive)) > 0.4;
         if (gyroStabilizationEnabled && isStraightDrive && minimumStabilizeSpeed) {
             double headingError = getHeadingError();
-            double correction;
-            
-            // Use a stronger proportional gain if driving straight
-            correction = kPgyroStraight * headingError;
-
+            double correction = kPgyroStraight * headingError;
             leftDrive -= correction;
             rightDrive -= correction;
-
-            SmartDashboard.putBoolean("Gyro Assist Active", true);
-        } else {
-            SmartDashboard.putBoolean("Gyro Assist Active", false);
         }
-
+    
+        // Drive the robot
         driveSystem.tankDrive(leftDrive, rightDrive, true);
     }
-
+    
     public void drive(ChassisSpeeds chassisSpeeds) {
         DifferentialDriveWheelSpeeds wheelSpeeds = kinematics.toWheelSpeeds(chassisSpeeds);
         wheelSpeeds.desaturate(0.5);
@@ -316,11 +316,8 @@ public class Drive extends Subsystem  {
 
     // @Override
     public void outputTelemetry(boolean disabled) {
-        Logger.recordOutput("Robot Position", getPose());
-        Logger.recordOutput("Robot Position");
-        
         // Drivetrain outputs
-        SmartDashboard.putNumber("Left Drivetrain Output", frontLeftMotor.get() * 100);
+        SmartDashboard.putNumber("Left Drivetrain Output", -frontLeftMotor.get() * 100);
         SmartDashboard.putNumber("Right Drivetrain Output", frontRightMotor.get() * 100);
 
         // IMU (navX) data

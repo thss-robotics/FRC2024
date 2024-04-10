@@ -6,7 +6,6 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.Subsystem;
-import frc.robot.subsystems.LED.RingIntakeState;
 import frc.robot.subsystems.Superstructure.RobotState;
 
 public class Intake extends Subsystem {
@@ -40,11 +39,11 @@ public class Intake extends Subsystem {
     private RingState ringState = RingState.NONE;
     
     public Boolean intakeRunning = true;
-    private static double INTAKE_SPEED = 1.0;
-    private static double EJECT_SPEED = -1.0;
-    private static double AUTO_INTAKE_SPEED = 1.0;
-    private static double AUTO_EJECT_SPEED = -0.5;
-    private static double SHOOT_SPEED = 1;
+    private static double INTAKE_SPEED = -1.0;
+    private static double EJECT_SPEED = 1.0;
+    private static double AUTO_INTAKE_SPEED = -1.0;
+    private static double AUTO_EJECT_SPEED = 0.5;
+    private static double SHOOT_SPEED = -1;
 
     public static Intake getInstance() {
         if (instance == null) {
@@ -55,8 +54,7 @@ public class Intake extends Subsystem {
 
     private Intake() {
         // Attach motors
-        intakeMotor = new CANSparkMax(7, MotorType.kBrushless);
-        intakeMotor.setSmartCurrentLimit(60);
+        intakeMotor = new CANSparkMax(7, MotorType.kBrushed);
     }
 
     public void intakePeriodic(){
@@ -76,7 +74,6 @@ public class Intake extends Subsystem {
         switch (currentState) {
             case INTAKING:
                 intakeMotor.set(INTAKE_SPEED);
-                intakeMotor.setSmartCurrentLimit(60);
                 break;
             case AUTO_INTAKING:
                 intakeMotor.set(AUTO_INTAKE_SPEED);
@@ -87,7 +84,6 @@ public class Intake extends Subsystem {
                 }
                 break;
             case AUTO_EJECTING:
-                intakeMotor.setSmartCurrentLimit(60);
                 intakeMotor.set(AUTO_EJECT_SPEED);
                 if(intakeSensor.get()){
                     setIntakeState(IntakeState.OFF);
@@ -95,17 +91,14 @@ public class Intake extends Subsystem {
                 }
                 break;
             case EJECTING:
-                intakeMotor.setSmartCurrentLimit(100);
                 intakeMotor.set(EJECT_SPEED);
                 break;
             case SHOOTING:
-                intakeMotor.setSmartCurrentLimit(100);
                 intakeMotor.set(SHOOT_SPEED);
                 if(!intakeSensor.get()){
                     ringState = RingState.NONE;
                 }
             case OFF:
-                intakeMotor.setSmartCurrentLimit(60);
             default:
                 intakeMotor.stopMotor();
                 break;

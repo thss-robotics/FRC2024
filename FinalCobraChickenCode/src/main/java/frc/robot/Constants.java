@@ -20,7 +20,7 @@ public class Constants {
     public static final double kJoystickThreshold = 0.1;
 
     // Devices
-    public static Boolean kEnableCameraServer = false;
+    public static Boolean kEnableCameraServer = true;
 
     // Config
     public static double kRecheckDeviceIntervalSeconds = 10.0;

@@ -25,6 +25,7 @@ public class Camera extends Subsystem{
     }
 
     private CameraState currentState = CameraState.DRIVE;
+    private Boolean intakeCameraEnabled = false;
 
     public static Camera getInstance() {
         if (instance == null) {
@@ -45,31 +46,49 @@ public class Camera extends Subsystem{
 
             // Init server
             server = CameraServer.getServer();
+            server.setSource(intakeCamera);
         }
     }
 
-    public void setCameraDriveMode(){
+    public void toggleCameras() {
+        if(intakeCameraEnabled){
+            server.setSource(shooterCamera);
+            intakeCameraEnabled = false;
+        } else {
+            server.setSource(intakeCamera);
+            intakeCameraEnabled = true;
+        }
+        Drive.getInstance().setDriveMode(!intakeCameraEnabled);
+    }
 
+    public void setCameraDriveMode(){
+        server.setSource(intakeCamera);
+        intakeCameraEnabled = true;
     }
 
     public void setCameraDriveReverseMode(){
-
+        server.setSource(shooterCamera);
+        intakeCameraEnabled = false;
     }
 
     public void setCameraIntakeMode(){
-
+        server.setSource(intakeCamera);
+        intakeCameraEnabled = true;
     }
 
     public void setCameraSpeakerMode(){
-
+        server.setSource(shooterCamera);
+        intakeCameraEnabled = false;
     }
 
     public void setCameraAmpMode(){
-
+        server.setSource(shooterCamera);
+        intakeCameraEnabled = false;
     }
 
     public void setCameraChainMode(){
-
+        server.setSource(shooterCamera);
+        intakeCameraEnabled = false;
     }
 
     @Override

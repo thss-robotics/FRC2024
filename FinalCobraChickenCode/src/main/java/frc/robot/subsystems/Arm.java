@@ -68,7 +68,7 @@ public class Arm extends Subsystem{
 
         // Set up encoder
         armEncoder = new DutyCycleEncoder(0);
-        armEncoder.setPositionOffset(0.846);
+        armEncoder.setPositionOffset(0.846 + 0.179);
 
         currentState = ArmState.MOVING;
         currentPosition = ArmPosition.DRIVE;
