@@ -9,14 +9,15 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryUtil;
 import java.nio.file.Paths;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.lib.loops.Looper;
 import frc.lib.util.AdvantageKit;
+import frc.lib.util.CrashTracker;
 import frc.robot.auto.AutoManager;
-import frc.robot.commands.FollowTrajectoryCommand;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Camera;
 import frc.robot.subsystems.Drive;
@@ -28,8 +29,15 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Superstructure.RobotState;
 import frc.robot.auto.AutoManager;
+import frc.robot.auto.AutoModeBase;
+import frc.robot.auto.AutoModeExecutor;
+import edu.wpi.first.wpilibj.MotorSafety;
 
 public class Robot extends LoggedRobot {
+
+  private final Looper mEnabledLooper = new Looper(Constants.kLooperDt);
+  private final Looper mDisabledLooper = new Looper(Constants.kLooperDt);
+
   // Subsystems, superstructure, and autonomous
   private Superstructure superstructure;
   private SubsystemManager subsystemManager;
@@ -50,6 +58,13 @@ public class Robot extends LoggedRobot {
   // Hardware
   PowerDistribution powerDistribution;
 
+  //AutoModeExecutor
+  private AutoModeExecutor AutoModeExecutor;
+	public final static AutoModeSelector mAutoModeSelector = new AutoModeSelector();
+  private static double AutoInitStartTime;
+	public static boolean is_red_alliance = false;
+	public static boolean flip_trajectories = false;
+
   @Override
   public void robotInit() {
     try {
@@ -66,8 +81,7 @@ public class Robot extends LoggedRobot {
       led = LED.getInstance();
       camera = Camera.getInstance();
       superstructure = Superstructure.getInstance();
-      autoManager = AutoManager.getInstance();
-      
+      drive.registerEnabledLoops(mEnabledLooper);
      
       // Enable brakes
       arm.enableArmBrake();
@@ -131,8 +145,15 @@ public class Robot extends LoggedRobot {
 
   @Override 
   public void autonomousInit(){
-    
+
+    AutoInitStartTime = Timer.getFPGATimestamp();
+    AutoModeExecutor.start(); 
+    mEnabledLooper.start();
   }
+
+    public static double getAutoInitStartTime() {
+        return AutoInitStartTime;
+    }
 
   @Override 
   public void autonomousPeriodic(){

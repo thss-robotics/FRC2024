@@ -16,17 +16,10 @@ import java.nio.file.Path;
 
 import frc.robot.subsystems.Drive;
 
-public class AutoManager {
+public abstract class AutoManager extends AutoModeBase {
     private static AutoManager instance = null;
     private Trajectory trajectory = new Trajectory();
     private String trajectoryJSON = "output/Test.wpilib.json";
-
-    public static AutoManager getInstance() {
-        if (instance == null) {
-            instance = new AutoManager();
-        }
-        return instance;
-    }
 
     private AutoManager() {
         loadTrajectory();
@@ -44,4 +37,8 @@ public class AutoManager {
     public Trajectory getTrajectory() {
         return trajectory;
     }
+
+    protected abstract void routine() throws AutoModeEndedException;
+
+    public abstract Pose2d getStartingPose();
 }

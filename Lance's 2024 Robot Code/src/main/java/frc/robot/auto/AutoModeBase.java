@@ -1,6 +1,6 @@
 package frc.robot.auto;
 
-import frc.robot.auto.Actions.Action;
+import frc.robot.auto.AutoManager;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.Timer;
@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Timer;
 public abstract class AutoModeBase {
     protected double m_update_rate = 1.0 / 50.0;
     protected boolean m_active = false;
+    protected boolean mIsInterrupted = false;
 
 
     protected double startTime = 0.0;
@@ -47,6 +48,16 @@ public abstract class AutoModeBase {
         return m_active;
     }
 
+    public void interrupt() {
+        System.out.println("** Auto mode interrrupted!");
+        mIsInterrupted = true;
+    }
+
+    public void resume() {
+        System.out.println("** Auto mode resumed!");
+        mIsInterrupted = false;
+    }
+    
     public boolean isActiveWithThrow() throws AutoModeEndedException {
         if (!isActive()) {
             throw new AutoModeEndedException();
@@ -55,12 +66,11 @@ public abstract class AutoModeBase {
         return isActive();
     }
 
-    public void runAction(Action action) throws AutoModeEndedException {
+    public void runAction(AutoManager action) throws AutoModeEndedException {
         isActiveWithThrow();
-        action.start();
-
-        while (isActiveWithThrow() && !action.isFinished()) {
-            action.update();
+        
+        while (isActiveWithThrow() ) {
+            action.getTrajectory();
             long waitTime = (long) (m_update_rate * 1000.0);
 
             try {
@@ -74,4 +84,8 @@ public abstract class AutoModeBase {
     }
 
     public abstract Pose2d getStartingPose();
+
+    public boolean getIsInterrupted() {
+        return mIsInterrupted;
+    }
 }

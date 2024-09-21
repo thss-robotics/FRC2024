@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 import frc.lib.Subsystem;
+import frc.lib.loops.ILooper;
+import frc.lib.loops.Loop;
 import frc.robot.Constants;
 import frc.robot.SubsystemManager;
 import frc.robot.subsystems.Intake.IntakeState;
@@ -135,6 +137,25 @@ public class Superstructure extends Subsystem{
     public boolean checkSystem() {
         return false;
     }
+
+    @Override
+    public synchronized void registerEnabledLoops(ILooper mEnabledLooper) {
+        mEnabledLooper.register(new Loop() {
+            @Override
+            public void onStart(double timestamp) {
+
+            }
+            @Override
+                public void onLoop(double timestamp) {
+                    
+                }
+
+            @Override
+            public void onStop(double timestamp) {
+                stop();
+            }
+            });
+        }
 
     @Override
     public synchronized void outputTelemetry(boolean isRobotDisabled) {

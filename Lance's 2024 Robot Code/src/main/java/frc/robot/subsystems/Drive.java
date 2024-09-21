@@ -18,6 +18,9 @@ import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelPositions;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import frc.lib.loops.ILooper;
+import frc.lib.loops.Loop;
+import edu.wpi.first.wpilibj.MotorSafety;
 import edu.wpi.first.math.kinematics.Kinematics;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -26,6 +29,7 @@ import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 
 public class Drive extends Subsystem  {
     private static Drive instance = null;
@@ -155,6 +159,32 @@ public class Drive extends Subsystem  {
         wheelSpeeds.desaturate(0.5);
         driveSystem.tankDrive(wheelSpeeds.leftMetersPerSecond, wheelSpeeds.rightMetersPerSecond);
     }
+
+    @Override
+    public void registerEnabledLoops(ILooper mEnabledLooper) {
+        mEnabledLooper.register(new Loop() {
+            @Override
+            public void onStart(double timestamp) {
+                setSpeedLimit(speedLimit);
+                }
+
+                @Override
+                public void onLoop(double timestamp) {
+                    if (leftEncoder.getRate() > speedLimit) {
+                     frontLeftMotor.stopMotor();   
+                    }
+                    if (rightEncoder.getRate() > speedLimit) {
+                        frontRightMotor.stopMotor();
+                    }
+                }
+
+            @Override
+            public void onStop(double timestamp) {
+                stop();
+            }
+            });
+        }
+    
 
     // STATE SETTERS
 
@@ -348,5 +378,7 @@ public class Drive extends Subsystem  {
         SmartDashboard.putNumber("Speed Limit", speedLimit);
         SmartDashboard.putBoolean("Reverse Direction", reverseForwardsDirection);
         SmartDashboard.putBoolean("Gyro Assist Enabled", gyroStabilizationEnabled);
+
+
     }
 }
