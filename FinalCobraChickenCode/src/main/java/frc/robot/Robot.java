@@ -107,14 +107,14 @@ public class Robot extends LoggedRobot {
       }
 
       // Telemetry
-      /* 
+       
       subsystemManager.outputToSmartDashboard(isDisabled());
       drive.outputTelemetry(isDisabled());
       arm.outputTelemetry(isDisabled());
       intake.outputTelemetry(isDisabled());
       shooter.outputTelemetry(isDisabled());
       superstructure.outputTelemetry(isDisabled());
-      camera.outputTelemetry(isDisabled());*/
+      camera.outputTelemetry(isDisabled());
     }
     catch (Throwable t) {
       throw t;
@@ -156,7 +156,7 @@ public class Robot extends LoggedRobot {
       // Adjust controls based on mode
       RobotState currentState = superstructure.getState();
     
-      /* 
+      
       if(currentState == RobotState.DRIVE){
         runShooter = controller.getRightTriggerAxis()> 0.2;
         runIntake = controller.getLeftTriggerAxis() > 0.2;
@@ -182,8 +182,6 @@ public class Robot extends LoggedRobot {
         armVelocity += controller.getRightTriggerAxis() > 0.2 ? -1: 0;
         armVelocity += controller.getRightTriggerAxis() > 0.2 ? 1 : 0;
       }
-    
-      */
 
       armVelocity = controller.getLeftTriggerAxis() - controller.getRightTriggerAxis();
 
